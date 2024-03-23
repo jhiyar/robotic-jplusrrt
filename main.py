@@ -3,7 +3,7 @@ from JPlusRRT import JPlusRRT
 import numpy as np
 import time  # For adding delays between movements
 from goal import Goal
-# from util import move_to_joint_pos,move_to_ee_pose
+from util import move_to_joint_pos,move_to_ee_pose
 
 if __name__ == '__main__':
     robot = Robot(with_gui=True)
@@ -30,6 +30,7 @@ if __name__ == '__main__':
         for node in path:
             if 'config' in node:  # Ensure 'config' key exists
                 joint_positions = node['config']
+                # print("Found joint position : " , joint_positions)
                 # move_to_joint_pos(robot.robot_id, joint_positions)
                 robot.reset_joint_pos(joint_positions)  # Move the robot to each position in the path
                 # time.sleep(.3)  # Wait a bit to see the movement

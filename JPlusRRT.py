@@ -40,6 +40,30 @@ class JPlusRRT:
                 self.tree.append(node)
                 return True  # Indicate success
         return False 
+    
+    # def random_sample(self, attempts=100):
+    #     lower_limits, upper_limits = self.robot.joint_limits()
+    #     closest_distance_to_goal = np.inf  # Initialize with a very high value
+    #     if self.tree:
+    #         # Calculate the distance from the last node to the goal
+    #         self.robot.reset_joint_pos(self.tree[-1]['config'])
+    #         last_node_ee_pos = self.robot.ee_position()
+    #         closest_distance_to_goal = np.linalg.norm(last_node_ee_pos - self.goal)
+
+    #     for _ in range(attempts):
+    #         random_config = np.random.uniform(lower_limits, upper_limits)
+    #         # self.robot.reset_joint_pos(random_config)  # Temporarily set the robot to the new positions to check for collisions and distance to goal
+    #         if not self.robot.in_collision():
+    #             new_node_ee_pos = self.robot.ee_position()  # Calculate the end effector position for this configuration
+    #             new_distance_to_goal = np.linalg.norm(new_node_ee_pos - self.goal)
+    #             if new_distance_to_goal < closest_distance_to_goal:
+    #                 parent_index = len(self.tree) - 1 if self.tree else None
+    #                 node = {'config': random_config, 'parent_index': parent_index}
+    #                 self.tree.append(node)
+    #                 closest_distance_to_goal = new_distance_to_goal  # Update the closest distance to goal
+    #                 return True  # Indicate success because it's closer to the goal
+    #     return False  # Return False if no closer configuration was found within the attempts
+
 
     def move_towards_goal(self):
         current_ee_pos = self.robot.ee_position()
