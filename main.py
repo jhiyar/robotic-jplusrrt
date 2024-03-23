@@ -1,56 +1,42 @@
 from robot import Robot
 from JPlusRRT import JPlusRRT
 import numpy as np
-import time 
+import time  # For adding delays between movements
 from goal import Goal
+# from util import move_to_joint_pos,move_to_ee_pose
 
 if __name__ == '__main__':
-    # Initialize the robot, potentially with a GUI to visualize the process
     robot = Robot(with_gui=True)
-    
-    # Define the start configuration for the robot
-    # For simplicity, we use the robot's home configuration or current configuration
-    qstart = robot.get_joint_pos()
+    # goal_position = np.array([0.7, 0.0, 0.6])  # Example goal 0.7, 0.3, 0.6
+    goal_position = np.array([0.7, 0.3, 0.6]) 
+    # goal_position = np.array([0.7, 0.0, 0.2]) 
 
-    # Initialize the JPlusRRT planner
-    # Adjust the goal direction probability and timeout as needed
-    planner = JPlusRRT(robot, goal_direction_probability=0.2, timeout=30)
-
-    # Define the goal configuration (position + orientation)
-    # For simplicity, this example will just reuse the goal position and assume a default orientation
-    # In practice, `gc` might need to include specific orientation values or other goal state details
-    goal_position = np.array([0.7, 0.0, 0.6])  # Position part of the goal configuration
-    goal_orientation = np.array([0, 0, 0, 1])  # Orientation part (e.g., a quaternion)
 
 
     for i in range(6):
         goal = Goal(i)
         robot.set_goal(goal)
 
-    # Combine position and orientation into a single structure for gc
-    # This combination depends on how your JPlusRRT and Robot classes expect goal configurations
-    gc = np.concatenate([goal_position, goal_orientation])
+    # move_to_ee_pose(robot.robot_id, goal_position)
 
-    # Then, when calling the plan method, include this gc as an argument
-    path = planner.plan(qstart, goal_position, gc)  # Adjusted to include gc
 
-    # Check if a path was found
+    planner = JPlusRRT(robot, goal_direction_probability=0.9)
+    start_position = robot.get_joint_pos()
+    
+    path = planner.plan(start_position, goal_position)
+    
     if path:
-        print("Path found. Moving the robot...")
-        # Execute the path
-        print(path)
+        print("Moving the robot along the found path...")
         for node in path:
-            print("Moving the robot to node: " + str(node))
-
-            config = node['config']
-
-            robot.reset_joint_pos(config)
-            # Introduce a small delay if you want to visualize the movement step by step
-            time.sleep(1)
+            if 'config' in node:  # Ensure 'config' key exists
+                joint_positions = node['config']
+                # move_to_joint_pos(robot.robot_id, joint_positions)
+                robot.reset_joint_pos(joint_positions)  # Move the robot to each position in the path
+                # time.sleep(.3)  # Wait a bit to see the movement
         print("Path execution completed. Press Enter to finish.")
         input() 
     else:
-        print("No path found within the given timeout.")
+        print("No path found.")
 
-    # Disconnect the robot (and close the simulation) when done
+
     robot.disconnect()

@@ -134,7 +134,7 @@ class Robot:
         displays a goal in the visualization
         :param goal: Goal object
         """
-        visual_shape = p.createVisualShape(p.GEOM_SPHERE, radius=0.05, rgbaColor=[0.0, 1.0, 0.0, 1.0])
+        visual_shape = p.createVisualShape(p.GEOM_SPHERE, radius=0.05, rgbaColor=[1.0, 1.0, 0.0, 1.0])
         goal_body_id = p.createMultiBody(baseMass=0, baseVisualShapeIndex=visual_shape, basePosition=list(goal.pos))
 
     def disconnect(self):

@@ -2,7 +2,7 @@ import numpy as np
 import random 
 
 class JPlusRRT:
-    def __init__(self, robot, goal_direction_probability=0.2):
+    def __init__(self, robot, goal_direction_probability=0.05):
         self.robot = robot
         self.tree = []
         self.goal_direction_probability = goal_direction_probability
@@ -22,8 +22,9 @@ class JPlusRRT:
                 success = self.random_sample() is not None
 
             # After updating the robot's state, check for collisions without passing new_pos
-            if not success or self.robot.in_collision():  # Corrected line
-                break  # This line might change depending on desired behavior (e.g., continue trying with another sample)
+            if not success or self.robot.in_collision():
+                print("Collision detected, searching for another point...")
+                continue
             
         return self.reconstruct_path()
 
@@ -88,7 +89,6 @@ class JPlusRRT:
         distance_to_goal = np.linalg.norm(current_ee_pos - goal_pos)
         
         # Define a threshold for how close the end effector needs to be to the goal to consider it reached
-        # This value might need adjustment based on your specific application's requirements
         threshold = 0.05  # Meters
         
         # Check if the distance to the goal is less than or equal to the threshold
