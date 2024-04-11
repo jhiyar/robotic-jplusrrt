@@ -139,3 +139,31 @@ class Robot:
 
     def disconnect(self):
         p.disconnect()
+    
+    # def inverse_kinematics(self, target_pos, target_orientation=None):
+    #     """
+    #     Computes the joint positions needed to reach a given target position (and optionally orientation) with the end effector.
+        
+    #     :param target_pos: A list or ndarray of 3 floats specifying the target position of the end effector in the world frame.
+    #     :param target_orientation: An optional list or ndarray of 4 floats (quaternion [x, y, z, w]) specifying the target orientation of the end effector. If None, orientation is ignored in the IK calculation.
+    #     :return: ndarray of float values representing the joint positions required to achieve the target end effector pose.
+    #     """
+    #     # The ikSolver argument is optional and specifies the IK algorithm. ikSolver=0 uses the default Damped Least Squares method.
+    #     if target_orientation is None:
+    #         # If no orientation is specified, use a neutral orientation for the calculation
+    #         target_orientation = p.getQuaternionFromEuler([0, 0, 0])
+        
+    #     joint_positions = p.calculateInverseKinematics(
+    #         self.robot_id,
+    #         self.end_effector_link_id,
+    #         targetPosition=target_pos,
+    #         targetOrientation=target_orientation,
+    #         # jointDamping=[0.01] * len(self.arm_joint_ids),  # Optional damping for the IK calculation
+    #         lowerLimits=self.joint_limits()[0],
+    #         upperLimits=self.joint_limits()[1],
+    #         # jointRanges=[2*np.pi]*len(self.arm_joint_ids),  # Assuming all joints can rotate fully for simplicity
+    #         restPoses=self.home_conf  # Optional: IK calculation can consider these as preferred positions
+    #     )
+        
+    #     # The returned joint positions include positions for all joints, so extract only the relevant arm joint positions
+    #     return np.array(joint_positions[:len(self.arm_joint_ids)])
