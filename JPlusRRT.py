@@ -135,13 +135,10 @@ class JPlusRRT:
             # Generate a random joint configuration
             q_rand = np.random.uniform(lower_limits, upper_limits)
 
-            # Set the robot's joints to this configuration
             self.robot.reset_joint_pos(q_rand)
 
-            # Check if this configuration is collision-free
             if not self.robot.in_collision():
-                # Compute the end-effector position using forward kinematics
-                ee_pos = self.robot.ee_position()  # Assuming this computes based on the current joint positions
+                ee_pos = self.robot.ee_position() 
 
                 # Find the nearest node in the tree to the new end-effector position
                 nearest_index = self.nearest_neighbor(ee_pos) if self.tree else None
