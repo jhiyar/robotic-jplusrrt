@@ -6,12 +6,10 @@ from goal import Goal
 from util import move_to_joint_pos,move_to_ee_pose
 
 if __name__ == '__main__':
-    robot = Robot(with_gui=True)
+    robot = Robot(with_gui=False)
     # goal_position = np.array([0.7, 0.0, 0.6])  # Example goal 0.7, 0.3, 0.6
     goal_position = np.array([0.7, 0.3, 0.6]) 
     # goal_position = np.array([0.7, 0.0, 0.2]) 
-
-
 
     for i in range(6):
         goal = Goal(i)
@@ -25,19 +23,25 @@ if __name__ == '__main__':
     
     path = planner.plan(start_position, goal_position)
     
+    robot.disconnect()
+
     if path:
+        robot_for_visualization = Robot(with_gui=True)
+        for i in range(6):
+            goal = Goal(i)
+            robot_for_visualization.set_goal(goal)
+
         print("Moving the robot along the found path...")
         for node in path:
             if 'config' in node:  # Ensure 'config' key exists
                 joint_positions = node['config']
                 # print("Found joint position : " , joint_positions)
-                # move_to_joint_pos(robot.robot_id, joint_positions)
-                robot.reset_joint_pos(joint_positions)  # Move the robot to each position in the path
+                # move_to_joint_pos(robot_for_visualization.robot_id, joint_positions)
+                robot_for_visualization.reset_joint_pos(joint_positions)  # Move the robot to each position in the path
                 # time.sleep(.3)  # Wait a bit to see the movement
         print("Path execution completed. Press Enter to finish.")
         input() 
     else:
         print("No path found.")
 
-
-    robot.disconnect()
+    robot_for_visualization.disconnect()

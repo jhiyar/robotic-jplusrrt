@@ -8,40 +8,7 @@ class JPlusRRT:
         self.goal_direction_probability = goal_direction_probability
         self.goal = None #goal is a numpy array [x, y, z] of the goal position
 
-    # def plan(self, start_pos, goal_pos):
-    #     self.goal = goal_pos
-    #     # Initialize the tree with the start position. Assume start_pos is the robot's current configuration.
-    #     start_node = {'config': start_pos, 'parent_index': None}
-    #     self.tree.append(start_node)
-
-    #     while not self.is_goal_reached():
-    #         # Decide whether to sample towards the goal or randomly in the configuration space
-    #         if random.random() < self.goal_direction_probability:
-    #             # Directly use the goal as the target, and convert it to configuration space using inverse kinematics
-    #             q_rand = self.robot.inverse_kinematics(self.goal[:3])  # Assuming self.goal contains position only
-    #         else:
-    #             # Sample a random configuration directly in the configuration space
-    #             q_rand = self.random_sample()
-
-
-    #         # Find the nearest node in the tree to the sampled configuration
-    #         nearest_index = self.nearest_neighbor(q_rand)
-    #         q_near = self.tree[nearest_index]['config']
-
-    #         # Take a step towards q_rand from q_near to get q_new
-    #         q_new = self.step_towards(q_near, q_rand)
-
-    #         # Temporarily set the robot to the new configuration to check for collisions
-    #         self.robot.reset_joint_pos(q_new)
-    #         if not self.robot.in_collision():
-    #             # If no collision, add q_new to the tree
-    #             node = {'config': q_new, 'parent_index': nearest_index}
-    #             self.tree.append(node)
-    #         else:
-    #             print("Collision detected, searching for another point...")
-    #             continue
-
-    #     return self.reconstruct_path()
+    
 
     def plan(self, start_pos, goal_pos):
         self.goal = goal_pos
@@ -64,16 +31,29 @@ class JPlusRRT:
         return self.reconstruct_path()
 
 
-    def nearest_neighbor(self, q_rand):
+    def nearest_neighbor(self, target_ee_pos):
         """Find the nearest node in the tree to q_rand."""
         closest_distance = np.inf
         closest_index = None
         for i, node in enumerate(self.tree):
-            distance = np.linalg.norm(node['config'] - q_rand)
+            # distance = np.linalg.norm(node['config'] - q_rand)
+            distance = np.linalg.norm(node['ee_pos'] - target_ee_pos)
+
             if distance < closest_distance:
                 closest_distance = distance
                 closest_index = i
         return closest_index
+    
+    # def nearest_neighbor(self, q_rand):
+    #     """Find the nearest node in the tree to q_rand."""
+    #     closest_distance = np.inf
+    #     closest_index = None
+    #     for i, node in enumerate(self.tree):
+    #         distance = np.linalg.norm(node['config'] - q_rand)
+    #         if distance < closest_distance:
+    #             closest_distance = distance
+    #             closest_index = i
+    #     return closest_index
     
     def step_towards(self, q_near, q_rand, step_size=0.05):
         """Take a small step from q_near towards q_rand."""
@@ -84,30 +64,100 @@ class JPlusRRT:
         else:
             q_new = q_near + (direction / distance) * step_size #  a new position that is exactly one step size closer towards q_rand, without exceeding the step size limit.
             return q_new
-
     
+
+    def step_towards_with_jacobian(self, q_near, goal_ee_pos, step_size=0.01):
+        """
+        Takes a step towards the goal using the Jacobian matrix from the current configuration q_near.
+        
+        :param q_near: The current joint configuration from which to start the step.
+        :param goal_ee_pos: The target end-effector position in task space.
+        :param step_size: The maximum step size in joint space (rad or meters).
+        :return: The new joint configuration after taking the step, or None if the move isn't feasible.
+        """
+        # Set the robot's joints to q_near to compute the current end-effector position and Jacobian
+        self.robot.reset_joint_pos(q_near)
+        current_ee_pos = self.robot.ee_position()
+        J = self.robot.get_jacobian()
+
+        # Calculate the task-space error (direction vector)
+        direction_vector = np.array(goal_ee_pos) - current_ee_pos
+        if np.linalg.norm(direction_vector) < step_size:
+            return q_near  # If already close enough, return the current configuration
+
+        # Normalize the direction vector and scale by step size
+        direction_vector = (direction_vector / np.linalg.norm(direction_vector)) * step_size
+
+        # Calculate the desired joint velocities using the pseudoinverse of the Jacobian
+        pseudo_inverse_J = np.linalg.pinv(J)
+        joint_velocities = np.dot(pseudo_inverse_J, direction_vector)
+
+        # Compute the new joint positions
+        q_new = np.array(q_near) + joint_velocities
+
+        # Apply joint limits
+        lower_limits, upper_limits = self.robot.joint_limits()
+        q_new = np.clip(q_new, lower_limits, upper_limits)
+
+        # Optionally, you could check for collisions here and return None if a collision is detected
+        self.robot.reset_joint_pos(q_new)
+        if self.robot.in_collision():
+            return None  # Collision detected, abort this step
+
+        return q_new
+
+
+    # def random_sample(self, attempts=100):
+    #         lower_limits, upper_limits = self.robot.joint_limits()
+    #         for _ in range(attempts):
+    #             q_rand = np.random.uniform(lower_limits, upper_limits)
+    #             if self.tree:
+    #                 nearest_index = self.nearest_neighbor(q_rand)
+    #                 q_near = self.tree[nearest_index]['config']
+    #                 q_new = self.step_towards(q_near, q_rand)
+    #                 self.robot.reset_joint_pos(q_new)
+    #                 if not self.robot.in_collision():
+    #                     node = {'config': q_new, 'ee_pos': self.robot.ee_position(), 'parent_index': nearest_index}
+    #                     self.tree.append(node)
+    #                     return True  # Indicate success
+    #             else:
+    #                 # If the tree is empty, initialize it with the start position
+    #                 self.robot.reset_joint_pos(q_rand)
+    #                 if not self.robot.in_collision():
+    #                     node = {'config': q_rand, 'ee_pos': self.robot.ee_position(), 'parent_index': None}
+    #                     self.tree.append(node)
+    #                     return True
+    #         return False
+
     def random_sample(self, attempts=100):
         lower_limits, upper_limits = self.robot.joint_limits()
         for _ in range(attempts):
+            # Generate a random joint configuration
             q_rand = np.random.uniform(lower_limits, upper_limits)
-            if self.tree:
-                nearest_index = self.nearest_neighbor(q_rand)
-                q_near = self.tree[nearest_index]['config']
-                q_new = self.step_towards(q_near, q_rand)
-                self.robot.reset_joint_pos(q_new)
-                if not self.robot.in_collision():
-                    node = {'config': q_new, 'parent_index': nearest_index}
+
+            # Set the robot's joints to this configuration
+            self.robot.reset_joint_pos(q_rand)
+
+            # Check if this configuration is collision-free
+            if not self.robot.in_collision():
+                # Compute the end-effector position using forward kinematics
+                ee_pos = self.robot.ee_position()  # Assuming this computes based on the current joint positions
+
+                # Find the nearest node in the tree to the new end-effector position
+                nearest_index = self.nearest_neighbor(ee_pos) if self.tree else None
+                if nearest_index is not None:
+                    q_near = self.tree[nearest_index]['config']
+                    q_new = self.step_towards(q_near, q_rand)
+                else:
+                    q_new = q_rand  # If tree is empty, start from the random position
+
+                new_ee_pos = self.robot.ee_position()  # Get the new end-effector position after moving
+                if q_new is not None and not self.robot.in_collision():
+                    node = {'config': q_new, 'ee_pos': new_ee_pos, 'parent_index': nearest_index}
                     self.tree.append(node)
                     return True  # Indicate success
-            else:
-                # If the tree is empty, initialize it with the start position
-                self.robot.reset_joint_pos(q_rand)
-                if not self.robot.in_collision():
-                    node = {'config': q_rand, 'parent_index': None}
-                    self.tree.append(node)
-                    return True
+                    
         return False
-
     
     def move_towards_goal(self):
         current_ee_pos = self.robot.ee_position()
@@ -136,7 +186,9 @@ class JPlusRRT:
         else:
             # Successful move towards goal without collision, update the tree
             parent_index = len(self.tree) - 1 if self.tree else None
-            node = {'config': new_joint_positions, 'parent_index': parent_index}
+            # node = {'config': new_joint_positions, 'parent_index': parent_index}
+            node = {'config': new_joint_positions, 'ee_pos': self.robot.ee_position(), 'parent_index': parent_index}
+
             self.tree.append(node)
             return True
 
