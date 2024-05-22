@@ -1,8 +1,15 @@
+
+
+# Note: compare to an optimization based algorith vs ( Sample based algorithm)
+# calculate the time that is required to achieve each goal, execute number of iterations and average and/or report
+# success rate ()
+#
+
 import numpy as np
 import random 
 
 class JPlusRRT:
-    def __init__(self, robot, goal_direction_probability=0.05):
+    def __init__(self, robot, goal_direction_probability=0.5):
         self.robot = robot
         self.tree = []
         self.goal_direction_probability = goal_direction_probability
@@ -37,8 +44,9 @@ class JPlusRRT:
         closest_index = None
         for i, node in enumerate(self.tree):
             # distance = np.linalg.norm(node['config'] - q_rand)
-            distance = np.linalg.norm(node['ee_pos'] - target_ee_pos)
 
+            # change: we dont need to calculate distance each time, because q_near is same 
+            distance = np.linalg.norm(node['ee_pos'] - target_ee_pos)
             if distance < closest_distance:
                 closest_distance = distance
                 closest_index = i
@@ -141,7 +149,7 @@ class JPlusRRT:
                 ee_pos = self.robot.ee_position() 
 
                 # Find the nearest node in the tree to the new end-effector position
-                nearest_index = self.nearest_neighbor(ee_pos) if self.tree else None
+                nearest_index = self.nearest_neighbor(ee_pos) if self.tree else None # needs to change: use configuration for nearest neighbor
                 if nearest_index is not None:
                     q_near = self.tree[nearest_index]['config']
                     q_new = self.step_towards(q_near, q_rand)
@@ -156,7 +164,10 @@ class JPlusRRT:
                     
         return False
     
+
     def move_towards_goal(self):
+
+        # change : find the closes end-effector position to the goal
         current_ee_pos = self.robot.ee_position()
         goal_pos = self.goal
 

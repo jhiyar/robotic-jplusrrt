@@ -1,5 +1,9 @@
 from robot import Robot
 from JPlusRRT import JPlusRRT
+from IKRRT import IKRRT
+from BIKRRT import BIKRRT
+from RRTStar import RRTStar
+
 import numpy as np
 import time  # For adding delays between movements
 from goal import Goal
@@ -7,8 +11,8 @@ from util import move_to_joint_pos,move_to_ee_pose
 
 if __name__ == '__main__':
     robot = Robot(with_gui=False)
-    # goal_position = np.array([0.7, 0.0, 0.6])  # Example goal 0.7, 0.3, 0.6
-    goal_position = np.array([0.7, 0.3, 0.6]) 
+    goal_position = np.array([0.7, 0.0, 0.6])  # Example goal 0.7, 0.3, 0.6
+    # goal_position = np.array([0.7, 0.3, 0.6]) 
     # goal_position = np.array([0.7, 0.0, 0.2]) 
 
     for i in range(6):
@@ -18,8 +22,12 @@ if __name__ == '__main__':
     # move_to_ee_pose(robot.robot_id, goal_position)
 
 
-    planner = JPlusRRT(robot, goal_direction_probability=0.9)
-    start_position = robot.get_joint_pos()
+    # planner = JPlusRRT(robot, goal_direction_probability=0.9)
+    planner = RRTStar(robot)
+    # start_position = robot.get_joint_pos()
+
+    start_position = np.array(robot.ee_position())
+
     
     path = planner.plan(start_position, goal_position)
     
@@ -38,7 +46,7 @@ if __name__ == '__main__':
                 # print("Found joint position : " , joint_positions)
                 # move_to_joint_pos(robot_for_visualization.robot_id, joint_positions)
                 robot_for_visualization.reset_joint_pos(joint_positions)  # Move the robot to each position in the path
-                # time.sleep(.3)  # Wait a bit to see the movement
+                time.sleep(.01)  # Wait a bit to see the movement
         print("Path execution completed. Press Enter to finish.")
         input() 
     else:
