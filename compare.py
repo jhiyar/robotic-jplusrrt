@@ -65,8 +65,8 @@ def plot_results(results):
     ax.set_ylabel('Success Rate (%)')
     plt.title('Algorithm Success Rate')
     plt.show()
+    input() 
 
-# Assuming you have the following classes implemented: JPlusRRT, RRTStar, IKRRT, BIKRRT
 if __name__ == '__main__':
 
     robot = Robot(with_gui=False)

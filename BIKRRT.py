@@ -28,7 +28,7 @@ class BIKRRT:
 
         # Initialize both trees with start and goal configurations
         self.start_tree.append({'config': self.robot.get_joint_pos(), 'ee_pos': start_pos, 'parent_index': None})
-        self.goal_tree.append({'config': self.robot.inverse_kinematics(goal_pos), 'ee_pos': goal_pos, 'parent_index': None})
+        self.goal_tree.append({'config': self.robot.inverse_kinematics(goal_pos,[0.2, 0, 0]), 'ee_pos': goal_pos, 'parent_index': None})
 
         i = 0
         while True:
@@ -88,11 +88,11 @@ class BIKRRT:
         direction = target_pos - self.robot.ee_position()
         distance = np.linalg.norm(direction)  # Euclidean distance
         if distance <= step_size:
-            return self.robot.inverse_kinematics(target_pos)
+            return self.robot.inverse_kinematics(target_pos,[0.2, 0, 0])
         else:
             direction = (direction / distance) * step_size
             target_pos = self.robot.ee_position() + direction
-            return self.robot.inverse_kinematics(target_pos)
+            return self.robot.inverse_kinematics(target_pos,[0.2, 0, 0])
 
     def random_sample(self, tree, attempts=100):
         for _ in range(attempts):
@@ -103,7 +103,7 @@ class BIKRRT:
             target_ee_pos = np.array([x, y, z])
 
             try:
-                q_rand = self.robot.inverse_kinematics(target_ee_pos)
+                q_rand = self.robot.inverse_kinematics(target_ee_pos,[0.2, 0, 0])
             except:
                 continue
 

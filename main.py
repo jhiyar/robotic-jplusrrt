@@ -13,7 +13,7 @@ if __name__ == '__main__':
     robot = Robot(with_gui=False)
     goal_position = np.array([0.7, 0.0, 0.6])  # Example goal 0.7, 0.3, 0.6
     # goal_position = np.array([0.7, 0.3, 0.6]) 
-    # goal_position = np.array([0.7, 0.0, 0.2]) 
+    # goal_position = np.array([0.7, 0.0, 0.2]) #under the table
 
     for i in range(6):
         goal = Goal(i)
@@ -23,8 +23,8 @@ if __name__ == '__main__':
 
 
     # planner = JPlusRRT(robot, goal_direction_probability=0.9)
-    planner = RRTStar(robot, goal_bias=0.9)
-    # planner = BIKRRT(robot, goal_direction_probability=0.1)
+    # planner = RRTStar(robot, goal_bias=0.9)
+    planner = BIKRRT(robot, goal_direction_probability=0.1)
     # start_position = robot.get_joint_pos()
 
     start_position = np.array(robot.ee_position())
