@@ -7,7 +7,9 @@ import matplotlib.pyplot as plt
 import heapq
 
 class RRTStar:
-    def __init__(self, robot, gamma_rrt_star=1.0, eta=0.1, max_iterations=10000, goal_threshold=0.15, goal_bias=0.9):
+    # gamma_rrt_star influences the radius used for finding near neighbors during the rewiring process
+    # eta is the maximum step size or the distance the algorithm can move towards the random sample in one iteration
+    def __init__(self, robot, gamma_rrt_star=1.0, eta=0.1, max_iterations=10000, goal_threshold=0.05, goal_bias=0.9):
         self.robot = robot
         self.tree = []
         self.gamma_rrt_star = gamma_rrt_star
@@ -102,11 +104,11 @@ class RRTStar:
         direction = target_pos - start_pos
         distance = np.linalg.norm(direction)
         if distance <= self.eta:
-            return self.robot.inverse_kinematics(target_pos)
+            return self.robot.inverse_kinematics(target_pos,[0.2, 0, 0])
         else:
             direction = (direction / distance) * self.eta
             new_target_pos = start_pos + direction
-            return self.robot.inverse_kinematics(new_target_pos)
+            return self.robot.inverse_kinematics(new_target_pos,[0.2, 0, 0])
 
     def nearest_neighbor(self, V, target_pos):
         tree_positions = [node['ee_pos'] for node in V]
@@ -117,7 +119,7 @@ class RRTStar:
     def near_neighbors(self, V, target_pos):
         tree_positions = [node['ee_pos'] for node in V]
         tree_kdtree = KDTree(tree_positions)
-        card_V = len(V)
+        card_V = len(V) # Number of nodes in the tree
         dimension = len(target_pos)
         radius = min(self.gamma_rrt_star * (np.log(card_V) / card_V) ** (1 / dimension), self.eta)
         indices = tree_kdtree.query_ball_point(target_pos, radius)
@@ -179,3 +181,6 @@ class RRTStar:
         self.ax.set_ylabel('Y')
         plt.draw()
         plt.pause(0.001)
+
+
+# Next : change the algorithm to Knearest RRT*

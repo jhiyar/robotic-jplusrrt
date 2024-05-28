@@ -2,9 +2,10 @@ import numpy as np
 import pybullet as p
 import pybullet_data
 import random
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
 
-
-#Bidirectional Inverse Kinematics RRT
+# Bidirectional Inverse Kinematics RRT
 class BIKRRT:
     def __init__(self, robot, goal_direction_probability=0.5):
         self.robot = robot
@@ -13,6 +14,15 @@ class BIKRRT:
         self.goal_direction_probability = goal_direction_probability
         self.goal = None  # goal is a numpy array [x, y, z] of the goal position
 
+        # Initialize plot
+        plt.ion()
+        self.fig = plt.figure()
+        self.ax = self.fig.add_subplot(111, projection='3d')
+        self.ax.set_xlim(-1, 1)
+        self.ax.set_ylim(-1, 1)
+        self.ax.set_zlim(0, 1)
+        self.plot_initialized = False
+
     def plan(self, start_pos, goal_pos):
         self.goal = goal_pos
 
@@ -20,7 +30,11 @@ class BIKRRT:
         self.start_tree.append({'config': self.robot.get_joint_pos(), 'ee_pos': start_pos, 'parent_index': None})
         self.goal_tree.append({'config': self.robot.inverse_kinematics(goal_pos), 'ee_pos': goal_pos, 'parent_index': None})
 
+        i = 0
         while True:
+            i += 1
+            print('Iteration %d' % i)
+
             # Grow the start tree
             if random.random() < self.goal_direction_probability:
                 success = self.extend_tree(self.start_tree, self.goal_tree[-1]['ee_pos'])
@@ -38,6 +52,8 @@ class BIKRRT:
 
             if success and self.check_connection():
                 break
+
+            self.visualize_trees()  # Update visualization after each iteration
 
         return self.reconstruct_path()
 
@@ -111,12 +127,33 @@ class BIKRRT:
 
     def check_connection(self):
         """Check if the start and goal trees are connected."""
+        min_distance = np.inf
+        start_connect_node = None
+        goal_connect_node = None
+
         for start_node in self.start_tree:
             for goal_node in self.goal_tree:
-                if np.linalg.norm(start_node['ee_pos'] - goal_node['ee_pos']) < 0.05:
-                    self.connection = (start_node, goal_node)
-                    return True
+                distance = np.linalg.norm(start_node['ee_pos'] - goal_node['ee_pos'])
+                if distance < min_distance:
+                    min_distance = distance
+                    start_connect_node = start_node
+                    goal_connect_node = goal_node
+
+        if min_distance < 0.05 and self.check_path(start_connect_node['config'], goal_connect_node['config']):
+            self.connection = (start_connect_node, goal_connect_node)
+            print("Trees are connected")
+            return True
         return False
+
+    def check_path(self, start_config, goal_config, steps=10):
+        """Check if a direct path between two configurations is collision-free."""
+        for step in range(steps + 1):
+            alpha = step / steps
+            intermediate_config = (1 - alpha) * np.array(start_config) + alpha * np.array(goal_config)
+            self.robot.reset_joint_pos(intermediate_config)
+            if self.robot.in_collision():
+                return False
+        return True
 
     def reconstruct_path(self):
         """Reconstruct the path from start to goal."""
@@ -139,4 +176,38 @@ class BIKRRT:
             parent_index = node['parent_index']
             node = self.goal_tree[parent_index] if parent_index is not None else None
 
+        self.visualize_trees(path)  # Visualize the final path
         return path
+
+    def visualize_trees(self, path=None):
+        self.ax.clear()
+        self.ax.set_xlim(-1, 1)
+        self.ax.set_ylim(-1, 1)
+        self.ax.set_zlim(0, 1)
+
+        for tree, color in [(self.start_tree, 'b'), (self.goal_tree, 'r')]:
+            for node in tree:
+                if node['parent_index'] is not None:
+                    parent_node = tree[node['parent_index']]
+                    self.ax.plot([node['ee_pos'][0], parent_node['ee_pos'][0]], 
+                                 [node['ee_pos'][1], parent_node['ee_pos'][1]], 
+                                 [node['ee_pos'][2], parent_node['ee_pos'][2]], color + '-')
+                    self.ax.plot([node['ee_pos'][0]], [node['ee_pos'][1]], [node['ee_pos'][2]], color + 'o')
+
+        # Plot the start and goal positions
+        self.ax.plot([self.start_tree[0]['ee_pos'][0]], [self.start_tree[0]['ee_pos'][1]], [self.start_tree[0]['ee_pos'][2]], 'yo', markersize=10)  # Start in yellow
+        self.ax.plot([self.goal_tree[0]['ee_pos'][0]], [self.goal_tree[0]['ee_pos'][1]], [self.goal_tree[0]['ee_pos'][2]], 'go', markersize=10)  # Goal in green
+
+        # Draw the final path in orange
+        if path:
+            for i in range(len(path) - 1):
+                self.ax.plot([path[i]['ee_pos'][0], path[i + 1]['ee_pos'][0]],
+                             [path[i]['ee_pos'][1], path[i + 1]['ee_pos'][1]],
+                             [path[i]['ee_pos'][2], path[i + 1]['ee_pos'][2]], 'orange', linewidth=2)
+
+        self.ax.set_title('BIKRRT Tree')
+        self.ax.set_xlabel('X')
+        self.ax.set_ylabel('Y')
+        self.ax.set_zlabel('Z')
+        plt.draw()
+        plt.pause(0.01)

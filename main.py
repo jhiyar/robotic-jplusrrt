@@ -23,7 +23,8 @@ if __name__ == '__main__':
 
 
     # planner = JPlusRRT(robot, goal_direction_probability=0.9)
-    planner = RRTStar(robot)
+    planner = RRTStar(robot, goal_bias=0.9)
+    # planner = BIKRRT(robot, goal_direction_probability=0.1)
     # start_position = robot.get_joint_pos()
 
     start_position = np.array(robot.ee_position())
