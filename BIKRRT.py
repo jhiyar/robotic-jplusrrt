@@ -7,21 +7,23 @@ import matplotlib.pyplot as plt
 
 # Bidirectional Inverse Kinematics RRT
 class BIKRRT:
-    def __init__(self, robot, goal_direction_probability=0.5):
+    def __init__(self, robot, goal_direction_probability=0.5,with_visualization=False):
         self.robot = robot
         self.start_tree = []
         self.goal_tree = []
         self.goal_direction_probability = goal_direction_probability
         self.goal = None  # goal is a numpy array [x, y, z] of the goal position
+        self.with_visualization = with_visualization
 
-        # Initialize plot
-        plt.ion()
-        self.fig = plt.figure()
-        self.ax = self.fig.add_subplot(111, projection='3d')
-        self.ax.set_xlim(-1, 1)
-        self.ax.set_ylim(-1, 1)
-        self.ax.set_zlim(0, 1)
-        self.plot_initialized = False
+        if with_visualization:
+            # Initialize plot
+            plt.ion()
+            self.fig = plt.figure()
+            self.ax = self.fig.add_subplot(111, projection='3d')
+            self.ax.set_xlim(-1, 1)
+            self.ax.set_ylim(-1, 1)
+            self.ax.set_zlim(0, 1)
+            self.plot_initialized = False
 
     def plan(self, start_pos, goal_pos):
         self.goal = goal_pos
@@ -53,7 +55,8 @@ class BIKRRT:
             if success and self.check_connection():
                 break
 
-            self.visualize_trees()  # Update visualization after each iteration
+            if self.with_visualization:
+                self.visualize_trees()  # Update visualization after each iteration
 
         return self.reconstruct_path()
 
@@ -99,7 +102,7 @@ class BIKRRT:
             # Generate a random end-effector position
             x = np.random.uniform(-1, 1)
             y = np.random.uniform(-1, 1)
-            z = np.random.uniform(0, 1)  # Added z-axis for 3D space
+            z = np.random.uniform(0, 1)  # z-axis for 3D space
             target_ee_pos = np.array([x, y, z])
 
             try:
@@ -142,6 +145,7 @@ class BIKRRT:
         if min_distance < 0.05 and self.check_path(start_connect_node['config'], goal_connect_node['config']):
             self.connection = (start_connect_node, goal_connect_node)
             print("Trees are connected")
+
             return True
         return False
 
@@ -150,6 +154,8 @@ class BIKRRT:
         for step in range(steps + 1):
             alpha = step / steps
             intermediate_config = (1 - alpha) * np.array(start_config) + alpha * np.array(goal_config)
+            print("check_path")
+            print(intermediate_config)
             self.robot.reset_joint_pos(intermediate_config)
             if self.robot.in_collision():
                 return False
@@ -176,7 +182,9 @@ class BIKRRT:
             parent_index = node['parent_index']
             node = self.goal_tree[parent_index] if parent_index is not None else None
 
-        self.visualize_trees(path)  # Visualize the final path
+        if self.with_visualization:
+            self.visualize_trees(path)  # Visualize the final path
+        
         return path
 
     def visualize_trees(self, path=None):

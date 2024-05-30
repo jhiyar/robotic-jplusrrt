@@ -9,7 +9,7 @@ import heapq
 class RRTStar:
     # gamma_rrt_star influences the radius used for finding near neighbors during the rewiring process
     # eta is the maximum step size or the distance the algorithm can move towards the random sample in one iteration
-    def __init__(self, robot, gamma_rrt_star=1.0, eta=0.1, max_iterations=10000, goal_threshold=0.05, goal_bias=0.9):
+    def __init__(self, robot, gamma_rrt_star=1.0, eta=0.1, max_iterations=10000, goal_threshold=0.05, goal_bias=0.9,with_visualization=False):
         self.robot = robot
         self.tree = []
         self.gamma_rrt_star = gamma_rrt_star
@@ -20,12 +20,15 @@ class RRTStar:
         self.goal_threshold = goal_threshold
         self.goal_bias = goal_bias  # Probability of sampling the goal
 
-        # Initialize plot
-        plt.ion()
-        self.fig, self.ax = plt.subplots()
-        self.ax.set_xlim(-1, 1)
-        self.ax.set_ylim(-1, 1)
-        self.plot_initialized = False
+        self.with_visualization = with_visualization
+
+        if with_visualization:
+            # Initialize plot
+            plt.ion()
+            self.fig, self.ax = plt.subplots()
+            self.ax.set_xlim(-1, 1)
+            self.ax.set_ylim(-1, 1)
+            self.plot_initialized = False
 
     def plan(self, start_pos, goal_pos):
         self.goal = goal_pos
@@ -72,7 +75,8 @@ class RRTStar:
                 E.append((xmin['id'], xnew['id']))
 
                 # Visualize the current state of the tree
-                self.visualize_tree(V, E, goal_pos)
+                if self.with_visualization:
+                    self.visualize_tree(V, E, goal_pos)
 
                 # Check if the goal is reached
                 if self.is_goal_reached(xnew['ee_pos']):
@@ -146,7 +150,9 @@ class RRTStar:
             parent_index = current_node['parent_index']
             current_node = next((node for node in self.tree if node['id'] == parent_index), None)
 
-        self.visualize_tree(self.tree, self.tree_edges(self.tree), self.goal, path)
+        if self.with_visualization:
+            self.visualize_tree(self.tree, self.tree_edges(self.tree), self.goal, path)
+        
         return path
 
     def tree_edges(self, V):

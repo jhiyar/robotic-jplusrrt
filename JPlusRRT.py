@@ -7,18 +7,33 @@
 
 import numpy as np
 import random 
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
 
 class JPlusRRT:
-    def __init__(self, robot, goal_direction_probability=0.5):
+    def __init__(self, robot, goal_direction_probability=0.5,with_visualization=False):
         self.robot = robot
         self.tree = []
         self.goal_direction_probability = goal_direction_probability
         self.goal = None #goal is a numpy array [x, y, z] of the goal position
+        self.with_visualization = with_visualization
+
+        if with_visualization:
+            # Initialize plot
+            plt.ion()
+            self.fig = plt.figure()
+            self.ax = self.fig.add_subplot(111, projection='3d')
+            self.ax.set_xlim(-1, 1)
+            self.ax.set_ylim(-1, 1)
+            self.ax.set_zlim(0, 1)
 
     
 
     def plan(self, start_pos, goal_pos):
         self.goal = goal_pos
+        self.start_pos = start_pos
+
         # Start position is now assumed to be set directly in the robot, 
         # so we start planning from the robot's current state
 
@@ -34,6 +49,9 @@ class JPlusRRT:
             if not success or self.robot.in_collision():
                 print("Collision detected, searching for another point...")
                 continue
+
+            if self.with_visualization:
+                self.visualize_tree()
             
         return self.reconstruct_path()
 
@@ -247,4 +265,39 @@ class JPlusRRT:
             parent_index = current_node['parent_index']
             current_node = self.tree[parent_index] if parent_index is not None else None
 
+        if self.with_visualization:
+            self.visualize_tree(final=True, path=path) 
+        
         return path
+    
+
+    def visualize_tree(self, final=False, path=None):
+
+        if not self.with_visualization:
+            return
+            
+        self.ax.clear()
+        self.ax.set_xlim(-1, 1)
+        self.ax.set_ylim(-1, 1)
+        self.ax.set_zlim(0, 1)
+
+        # Plot the start and goal positions
+        self.ax.scatter(self.start_pos[0], self.start_pos[1], self.start_pos[2], c='yellow', marker='o', s=100)
+        self.ax.scatter(self.goal[0], self.goal[1], self.goal[2], c='green', marker='o', s=100)
+
+        for node in self.tree:
+            if node['parent_index'] is not None:
+                parent_node = self.tree[node['parent_index']]
+                self.ax.plot([node['ee_pos'][0], parent_node['ee_pos'][0]], 
+                             [node['ee_pos'][1], parent_node['ee_pos'][1]], 
+                             [node['ee_pos'][2], parent_node['ee_pos'][2]], 'b-')
+                self.ax.scatter([node['ee_pos'][0]], [node['ee_pos'][1]], [node['ee_pos'][2]], c='blue', marker='o')
+
+        if final and path:
+            for i in range(len(path) - 1):
+                self.ax.plot([path[i]['ee_pos'][0], path[i + 1]['ee_pos'][0]],
+                             [path[i]['ee_pos'][1], path[i + 1]['ee_pos'][1]],
+                             [path[i]['ee_pos'][2], path[i + 1]['ee_pos'][2]], 'orange', linewidth=2)
+
+        plt.draw()
+        plt.pause(0.01)
