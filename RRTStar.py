@@ -52,6 +52,7 @@ class RRTStar:
             xnearest_index = self.nearest_neighbor(V, xrand)
             xnearest = V[xnearest_index]
             xnew_config = self.steer(xnearest['ee_pos'], xrand)
+            
             self.robot.reset_joint_pos(xnew_config)
 
             if not self.robot.in_collision():

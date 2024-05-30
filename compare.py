@@ -9,7 +9,9 @@ from IKRRT import IKRRT
 from BIKRRT import BIKRRT
 from RRTStar import RRTStar
 
-def compare_algorithms(algorithms, start_pos, goal_pos, num_runs=10):
+# change: add all goals for all three algorithms
+
+def compare_algorithms(algorithms, start_pos, goal_pos, num_runs=100):
     results = {name: {'path_length': [], 'planning_time': [], 'success': []} for name in algorithms.keys()}
     
     for name, algorithm in algorithms.items():

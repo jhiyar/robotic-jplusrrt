@@ -180,6 +180,9 @@ class Robot:
         if target_orientation is None:
             # If no orientation is specified, use a neutral orientation for the calculation
             target_orientation = p.getQuaternionFromEuler([0, 0, 0])
+        # else:
+            #check : check the documentation for getQuaternionFromEuler
+            # target_orientation = p.getQuaternionFromEuler(target_orientation)
         
         joint_positions = p.calculateInverseKinematics(
             self.robot_id,

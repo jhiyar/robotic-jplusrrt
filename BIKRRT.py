@@ -29,7 +29,13 @@ class BIKRRT:
         self.goal = goal_pos
 
         # Initialize both trees with start and goal configurations
+
         self.start_tree.append({'config': self.robot.get_joint_pos(), 'ee_pos': start_pos, 'parent_index': None})
+
+        #change needed : before adding configuration we should check it is collision free
+        # we can search for different configurations in  a loop and check for collisions
+        # maybe we can reset the robots position to make it find different configuration, with different 
+        # starting configurations the invers_kinematics would be different
         self.goal_tree.append({'config': self.robot.inverse_kinematics(goal_pos,[0.2, 0, 0]), 'ee_pos': goal_pos, 'parent_index': None})
 
         i = 0
