@@ -184,11 +184,12 @@ class Robot:
             #check : check the documentation for getQuaternionFromEuler
             # target_orientation = p.getQuaternionFromEuler(target_orientation)
         
+        
         joint_positions = p.calculateInverseKinematics(
             self.robot_id,
             self.end_effector_link_id,
             targetPosition=target_pos,
-            targetOrientation=target_orientation,
+            # targetOrientation=target_orientation,
             lowerLimits=self.joint_limits()[0],
             upperLimits=self.joint_limits()[1],
             restPoses=self.home_conf  # Optional: IK calculation can consider these as preferred positions

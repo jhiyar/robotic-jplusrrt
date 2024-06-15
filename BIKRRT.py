@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 # Bidirectional Inverse Kinematics RRT
 class BIKRRT:
-    def __init__(self, robot, goal_direction_probability=0.5,with_visualization=False):
+    def __init__(self, robot, goal_direction_probability=0.5, with_visualization=False):
         self.robot = robot
         self.start_tree = []
         self.goal_tree = []
@@ -29,14 +29,22 @@ class BIKRRT:
         self.goal = goal_pos
 
         # Initialize both trees with start and goal configurations
-
         self.start_tree.append({'config': self.robot.get_joint_pos(), 'ee_pos': start_pos, 'parent_index': None})
 
-        #change needed : before adding configuration we should check it is collision free
-        # we can search for different configurations in  a loop and check for collisions
-        # maybe we can reset the robots position to make it find different configuration, with different 
-        # starting configurations the invers_kinematics would be different
-        self.goal_tree.append({'config': self.robot.inverse_kinematics(goal_pos,[0.2, 0, 0]), 'ee_pos': goal_pos, 'parent_index': None})
+
+        # goal_config = self.robot.inverse_kinematics(goal_pos,[0.2, 0, 0])
+        # self.goal_tree.append({'config': goal_config, 'ee_pos': goal_pos, 'parent_index': None})
+
+        # Ensure the initial configuration for the goal tree is collision-free
+        for _ in range(1000):  # Try up to 1000 different configurations
+            goal_config = self.robot.inverse_kinematics(goal_pos)
+            self.robot.reset_joint_pos(goal_config)
+            if not self.robot.in_collision():
+                self.goal_tree.append({'config': goal_config, 'ee_pos': goal_pos, 'parent_index': None})
+                print("goal_config" , goal_config)
+                break
+        else:
+            raise RuntimeError("Failed to find a collision-free initial configuration for the goal tree.")
 
         i = 0
         while True:
@@ -82,7 +90,7 @@ class BIKRRT:
         return False
 
     def nearest_neighbor(self, tree, target_ee_pos):
-        """Find the nearest node in the tree to q_rand."""
+        """Find the nearest node in the tree to target_ee_pos."""
         closest_distance = np.inf
         closest_index = None
         for i, node in enumerate(tree):
@@ -97,11 +105,11 @@ class BIKRRT:
         direction = target_pos - self.robot.ee_position()
         distance = np.linalg.norm(direction)  # Euclidean distance
         if distance <= step_size:
-            return self.robot.inverse_kinematics(target_pos,[0.2, 0, 0])
+            return self.robot.inverse_kinematics(target_pos)
         else:
             direction = (direction / distance) * step_size
             target_pos = self.robot.ee_position() + direction
-            return self.robot.inverse_kinematics(target_pos,[0.2, 0, 0])
+            return self.robot.inverse_kinematics(target_pos)
 
     def random_sample(self, tree, attempts=100):
         for _ in range(attempts):
@@ -112,7 +120,7 @@ class BIKRRT:
             target_ee_pos = np.array([x, y, z])
 
             try:
-                q_rand = self.robot.inverse_kinematics(target_ee_pos,[0.2, 0, 0])
+                q_rand = self.robot.inverse_kinematics(target_ee_pos)
             except:
                 continue
 
@@ -160,8 +168,6 @@ class BIKRRT:
         for step in range(steps + 1):
             alpha = step / steps
             intermediate_config = (1 - alpha) * np.array(start_config) + alpha * np.array(goal_config)
-            print("check_path")
-            print(intermediate_config)
             self.robot.reset_joint_pos(intermediate_config)
             if self.robot.in_collision():
                 return False
@@ -178,6 +184,7 @@ class BIKRRT:
         node = self.connection[0]
         while node is not None:
             path.insert(0, node)
+
             parent_index = node['parent_index']
             node = self.start_tree[parent_index] if parent_index is not None else None
 

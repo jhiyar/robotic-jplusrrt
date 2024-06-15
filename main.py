@@ -36,25 +36,24 @@ if __name__ == '__main__':
     
     robot.disconnect()
 
-
     if path:
         robot_for_visualization = Robot(with_gui=True)
         for i in range(6):
                 goal = Goal(i)
                 robot_for_visualization.set_goal(goal)
 
-        while True:
+        # while True:
             
-            print("Moving the robot along the found path...")
-            for node in path:
-                if 'config' in node:  # Ensure 'config' key exists
-                    joint_positions = node['config']
-                    # print("Found joint position : " , joint_positions)
-                    # move_to_joint_pos(robot_for_visualization.robot_id, joint_positions)
-                    robot_for_visualization.reset_joint_pos(joint_positions)  # Move the robot to each position in the path
-                    time.sleep(.01)  # Wait a bit to see the movement
-            print("Path execution completed. Press Enter to finish.")
-            input() 
+        print("Moving the robot along the found path...")
+        for node in path:
+            if 'config' in node:  # Ensure 'config' key exists
+                joint_positions = node['config']
+                # print("Found joint position : " , joint_positions)
+                # move_to_joint_pos(robot_for_visualization.robot_id, joint_positions)
+                robot_for_visualization.reset_joint_pos(joint_positions)  # Move the robot to each position in the path
+                time.sleep(.01)  # Wait a bit to see the movement
+        print("Path execution completed. Press Enter to finish.")
+        input() 
         
         robot_for_visualization.disconnect()
         

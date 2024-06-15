@@ -100,7 +100,8 @@ class RRTStar:
                         xnear['cost'] = new_cost
 
         self.tree = V
-        return self.reconstruct_path()
+        # return self.reconstruct_path()
+        return None; # self.reconstruct_path()
     
     def is_goal_reached(self, ee_pos):
         return np.linalg.norm(ee_pos - self.goal) < self.goal_threshold
