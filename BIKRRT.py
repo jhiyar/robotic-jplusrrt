@@ -4,6 +4,7 @@ import pybullet_data
 import random
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
+import time 
 
 # Bidirectional Inverse Kinematics RRT
 class BIKRRT:
@@ -36,15 +37,21 @@ class BIKRRT:
         # self.goal_tree.append({'config': goal_config, 'ee_pos': goal_pos, 'parent_index': None})
 
         # Ensure the initial configuration for the goal tree is collision-free
-        for _ in range(1000):  # Try up to 1000 different configurations
-            goal_config = self.robot.inverse_kinematics(goal_pos)
+        found_collision_free = False
+        for _ in range(10000): 
+            goal_config = self.robot.inverse_kinematics(goal_pos,[np.pi/2, 0, 0]) 
             self.robot.reset_joint_pos(goal_config)
             if not self.robot.in_collision():
                 self.goal_tree.append({'config': goal_config, 'ee_pos': goal_pos, 'parent_index': None})
-                print("goal_config" , goal_config)
+                print({'config': goal_config, 'ee_pos': goal_pos, 'parent_index': None})
+                print("Found collision-free goal configuration:", goal_config)
+                found_collision_free = True
                 break
-        else:
+        
+        if not found_collision_free:
             raise RuntimeError("Failed to find a collision-free initial configuration for the goal tree.")
+
+
 
         i = 0
         while True:

@@ -176,20 +176,29 @@ class Robot:
         :param target_orientation: An optional list or ndarray of 4 floats (quaternion [x, y, z, w]) specifying the target orientation of the end effector. If None, orientation is ignored in the IK calculation.
         :return: ndarray of float values representing the joint positions required to achieve the target end effector pose.
         """
+
+        # orientations = [
+        #     p.getQuaternionFromEuler([np.pi, 0, 0]),   # Facing upwards
+        #     p.getQuaternionFromEuler([0, 0, 0]),       # Facing downwards
+        #     p.getQuaternionFromEuler([np.pi/2, 0, 0]), # Facing front
+        #     p.getQuaternionFromEuler([-np.pi/2, 0, 0]) # Facing back
+        # ]
+
+
         # The ikSolver argument is optional and specifies the IK algorithm. ikSolver=0 uses the default Damped Least Squares method.
         if target_orientation is None:
             # If no orientation is specified, use a neutral orientation for the calculation
             target_orientation = p.getQuaternionFromEuler([0, 0, 0])
-        # else:
+        else:
             #check : check the documentation for getQuaternionFromEuler
-            # target_orientation = p.getQuaternionFromEuler(target_orientation)
+            target_orientation = p.getQuaternionFromEuler(target_orientation)
         
         
         joint_positions = p.calculateInverseKinematics(
             self.robot_id,
             self.end_effector_link_id,
             targetPosition=target_pos,
-            # targetOrientation=target_orientation,
+            targetOrientation=target_orientation,
             lowerLimits=self.joint_limits()[0],
             upperLimits=self.joint_limits()[1],
             restPoses=self.home_conf  # Optional: IK calculation can consider these as preferred positions
