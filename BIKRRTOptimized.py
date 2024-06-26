@@ -1,13 +1,11 @@
 import numpy as np
 import pybullet as p
-import pybullet_data
 import random
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
-import time 
 
 # Bidirectional Inverse Kinematics RRT
-class BIKRRT:
+class BIKRRTOptimized:
     def __init__(self, robot, goal_direction_probability=0.5, with_visualization=False):
         self.robot = robot
         self.start_tree = []
@@ -32,15 +30,11 @@ class BIKRRT:
         # Initialize both trees with start and goal configurations
         self.start_tree.append({'config': self.robot.get_joint_pos(), 'ee_pos': start_pos, 'parent_index': None})
 
-
-        # goal_config = self.robot.inverse_kinematics(goal_pos,[0.2, 0, 0])
-        # self.goal_tree.append({'config': goal_config, 'ee_pos': goal_pos, 'parent_index': None})
-
         # Ensure the initial configuration for the goal tree is collision-free
         found_collision_free = False
         for _ in range(10000): 
             # Generate a random orientation
-            random_orientation = [random.uniform(-np.pi, np.pi), 0, 0]
+            random_orientation = [random.uniform(-np.pi, np.pi), random.uniform(-np.pi, np.pi), random.uniform(-np.pi, np.pi)]
             goal_config = self.robot.inverse_kinematics(goal_pos, random_orientation)
             self.robot.reset_joint_pos(goal_config)
             if not self.robot.in_collision():
@@ -52,8 +46,6 @@ class BIKRRT:
         
         if not found_collision_free:
             raise RuntimeError("Failed to find a collision-free initial configuration for the goal tree.")
-
-
 
         i = 0
         while True:
@@ -81,7 +73,7 @@ class BIKRRT:
             if self.with_visualization:
                 self.visualize_trees()  # Update visualization after each iteration
 
-        return self.reconstruct_path()
+        return self.optimize_path(self.reconstruct_path())
 
     def extend_tree(self, tree, target_pos, step_size=0.05):
         nearest_index = self.nearest_neighbor(tree, target_pos)
@@ -99,7 +91,7 @@ class BIKRRT:
         return False
 
     def nearest_neighbor(self, tree, target_ee_pos):
-        """Find the nearest node in the tree to target_ee_pos."""
+        """Find the nearest node in the tree to q_rand."""
         closest_distance = np.inf
         closest_index = None
         for i, node in enumerate(tree):
@@ -114,11 +106,11 @@ class BIKRRT:
         direction = target_pos - self.robot.ee_position()
         distance = np.linalg.norm(direction)  # Euclidean distance
         if distance <= step_size:
-            return self.robot.inverse_kinematics(target_pos)
+            return self.robot.inverse_kinematics(target_pos, [0.2, 0, 0])
         else:
             direction = (direction / distance) * step_size
             target_pos = self.robot.ee_position() + direction
-            return self.robot.inverse_kinematics(target_pos)
+            return self.robot.inverse_kinematics(target_pos, [0.2, 0, 0])
 
     def random_sample(self, tree, attempts=100):
         for _ in range(attempts):
@@ -129,7 +121,8 @@ class BIKRRT:
             target_ee_pos = np.array([x, y, z])
 
             try:
-                q_rand = self.robot.inverse_kinematics(target_ee_pos)
+                random_orientation = [random.uniform(-np.pi, np.pi), random.uniform(-np.pi, np.pi), random.uniform(-np.pi, np.pi)]
+                q_rand = self.robot.inverse_kinematics(target_ee_pos, random_orientation)
             except:
                 continue
 
@@ -172,11 +165,16 @@ class BIKRRT:
             return True
         return False
 
-    def check_path(self, start_config, goal_config, steps=10):
+    def check_path(self, start_config, goal_config, step_size=0.05):
         """Check if a direct path between two configurations is collision-free."""
+        start_config = np.array(start_config)
+        goal_config = np.array(goal_config)
+        distance = np.linalg.norm(goal_config - start_config)
+        steps = int(distance / step_size)
+
         for step in range(steps + 1):
             alpha = step / steps
-            intermediate_config = (1 - alpha) * np.array(start_config) + alpha * np.array(goal_config)
+            intermediate_config = (1 - alpha) * start_config + alpha * goal_config
             self.robot.reset_joint_pos(intermediate_config)
             if self.robot.in_collision():
                 return False
@@ -193,6 +191,8 @@ class BIKRRT:
         node = self.connection[0]
         while node is not None:
             path.insert(0, node)
+            print("node")
+            print(node)
 
             parent_index = node['parent_index']
             node = self.start_tree[parent_index] if parent_index is not None else None
@@ -208,6 +208,24 @@ class BIKRRT:
             self.visualize_trees(path)  # Visualize the final path
         
         return path
+
+    def optimize_path(self, path):
+        """Optimize the path by removing redundant nodes."""
+        if not path:
+            return path
+
+        optimized_path = [path[0]]  # Start with the initial node
+
+        for i in range(1, len(path) - 1):
+            if not self.check_path(optimized_path[-1]['config'], path[i + 1]['config']):
+                optimized_path.append(path[i])  # Add the last valid node before the collision
+
+        optimized_path.append(path[-1])  # Add the final node
+
+        print("Path: ", len(path))
+        print("Optimized path: ", len(optimized_path))
+
+        return optimized_path
 
     def visualize_trees(self, path=None):
         self.ax.clear()

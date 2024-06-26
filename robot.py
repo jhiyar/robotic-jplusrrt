@@ -201,7 +201,7 @@ class Robot:
             targetOrientation=target_orientation,
             lowerLimits=self.joint_limits()[0],
             upperLimits=self.joint_limits()[1],
-            restPoses=self.home_conf  # Optional: IK calculation can consider these as preferred positions
+            # restPoses=self.home_conf  # Optional: IK calculation can consider these as preferred positions
         )
         
         # The returned joint positions include positions for all joints, so extract only the relevant arm joint positions
