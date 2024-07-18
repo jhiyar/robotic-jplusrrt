@@ -103,6 +103,6 @@ class Scenario:
             if target_conf is not None:
                 ik_solutions.append(target_conf)
 
-        count.print()
+        # count.print()
         ik_solutions = np.array(ik_solutions)
         return ik_solutions

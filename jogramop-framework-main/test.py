@@ -1,7 +1,7 @@
 import numpy as np
 from visualization import show_scenario
 from scenario import Scenario
-
+from JPlusRRT import JPlusRRT
 
 def matrix_to_quaternion(matrix):
     """
@@ -35,54 +35,63 @@ def matrix_to_quaternion(matrix):
             z = 0.25 * s
     return np.array([x, y, z, w])
 
+def move_robot_along_path(robot, sim, path):
+    for config in path:
+        robot.move_to(config)
+        sim.step()  # Advance the simulation
 
 def main():
     s = Scenario(11)
-    s.select_n_grasps(10)
+    s.select_n_grasps(3)
     robot, sim = s.get_robot_and_sim(with_gui=True)  # Enable GUI for visualization
 
-    # Try multiple grasps to find a reachable goal
-    for i in range(len(s.grasp_poses)):
-        grasp_pose = s.grasp_poses[i]
-        pos = grasp_pose[:3, 3]
-        orn_matrix = grasp_pose[:3, :3]  # Extract orientation matrix
+    # Extract the goal pose from the selected grasp
+    grasp_pose = s.grasp_poses[0]
+    pos = grasp_pose[:3, 3]
+    orn_matrix = grasp_pose[:3, :3]  # Extract orientation matrix
 
-        # Convert orientation matrix to quaternion using the helper function
-        orn_quat = matrix_to_quaternion(orn_matrix)
+    # Convert orientation matrix to quaternion using the helper function
+    orn_quat = matrix_to_quaternion(orn_matrix)
 
-        # Print position and orientation for debugging
-        print(f"Trying grasp {i + 1}/{len(s.grasp_poses)}")
-        print("Goal Position:", pos)
-        print("Goal Orientation (Quaternion):", orn_quat)
+    # Print position and orientation for debugging
+    print("Goal Position:", pos)
+    print("Goal Orientation (Quaternion):", orn_quat)
 
-        # Check if the quaternion has NaN values
-        if np.any(np.isnan(orn_quat)):
-            print("Invalid orientation quaternion. Skipping this grasp.")
-            continue
+    # Check if the quaternion has NaN values
+    if np.any(np.isnan(orn_quat)):
+        print("Invalid orientation quaternion. Please check the input rotation matrix.")
+        return
+    
+    
+    # Get IK solution for the goal position
+    goal_joint_config = robot.inverse_kinematics(pos, orn_quat)
+    input()
 
-        # Get IK solution for the goal position
-        goal_joint_config = robot.inverse_kinematics(pos, orn_quat)
+    if goal_joint_config is None:
+        print("No IK solution found for the goal position.")
+        return
 
-        if goal_joint_config is None:
-            print("No IK solution found for this goal position.")
-            continue
+    # Get the current joint configuration as the start configuration
+    start_joint_config = robot.arm_joints_pos()
 
-        # If a valid IK solution is found, move the robot and exit the loop
-        print("IK solution found. Moving the robot.")
-        robot.move_to(goal_joint_config)
-        input()
-        # Step the simulation to visualize the movement
-        # for _ in range(100):
-        #     sim.step()  # Advance the simulation multiple times to visualize the movement
 
-        break  # Exit the loop if a valid solution is found
-    else:
-        print("No valid IK solution found for any of the grasps.")
+    # Plan the path using JPlusRRT
+    # planner = JPlusRRT(robot, start_joint_config, goal_joint_config)
+    # path = planner.plan()
 
+    # print("path" , path)
+
+
+    # if path is None:
+    #     print("No valid path found to the goal.")
+    #     return
+
+    # # Move the robot along the planned path
+    # move_robot_along_path(robot, sim, path)
+    
     # Visualize the scenario
     # show_scenario(s)
     # input()  # Wait for user input to close the visualization
-
 
 if __name__ == "__main__":
     main()
