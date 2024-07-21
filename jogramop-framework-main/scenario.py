@@ -3,9 +3,6 @@ import os
 import numpy as np
 import open3d as o3d
 import burg_toolkit as burg
-import pybullet
-
-from JPlusRRT import JPlusRRT
 
 import simulation
 from simulation import GraspingSimulator, FrankaRobot

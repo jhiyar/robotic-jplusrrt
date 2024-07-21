@@ -488,22 +488,14 @@ class FrankaRobot(burg.robots.RobotBase):
 
         zero_vec = [0.0] * num_dof
         joint_positions = self.arm_joints_pos().tolist()
-        joint_velocities = zero_vec  # Assuming zero velocities for this case
-        joint_accelerations = zero_vec  # Assuming zero accelerations for this case
+        joint_velocities = zero_vec  # Assuming zero velocities 
+        joint_accelerations = zero_vec  # zero accelerations 
 
         # Ensure local_position is a 3-element array
         local_position = [0.0, 0.0, 0.0]
 
-        # Debug statements to log the values and sizes
-        print(f"num_dof: {num_dof}")
-        print(f"local_position: {local_position}, size: {len(local_position)}")
-        print(f"joint_positions: {joint_positions}, size: {len(joint_positions)}")
-        print(f"joint_velocities: {joint_velocities}, size: {len(joint_velocities)}")
-        print(f"joint_accelerations: {joint_accelerations}, size: {len(joint_accelerations)}")
-        print(f"zero_vec: {zero_vec}, size: {len(zero_vec)}")
-
-        if len(local_position) != 3:
-            raise ValueError("local_position needs to be of size 3")
+        # if len(local_position) != 3:
+        #     raise ValueError("local_position needs to be of size 3")
 
         if len(joint_positions) != num_dof:
             raise ValueError("joint_positions array size does not match the number of DoF")
@@ -513,11 +505,6 @@ class FrankaRobot(burg.robots.RobotBase):
 
         if len(joint_accelerations) != num_dof:
             raise ValueError("joint_accelerations array size does not match the number of DoF")
-
-        if len(zero_vec) != num_dof:
-            raise ValueError("zero_vec array size does not match the number of DoF")
-        
-        print("self.end_effector_link_id" , self.end_effector_link_id)
 
         jac_t, jac_r = self._bullet_client.calculateJacobian(
             self.body_id,
