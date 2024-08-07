@@ -14,9 +14,9 @@ from util import move_to_joint_pos,move_to_ee_pose
 
 if __name__ == '__main__':
     robot = Robot(with_gui=False)
-    # goal_position = np.array([0.7, 0.0, 0.6])  # Example goal 0.7, 0.3, 0.6
+    goal_position = np.array([0.7, 0.0, 0.6])  # Example goal 0.7, 0.3, 0.6
     # goal_position = np.array([0.7, 0.3, 0.6]) 
-    goal_position = np.array([0.7, 0.0, 0.2]) #under the table
+    # goal_position = np.array([0.7, 0.0, 0.2]) #under the table
 
     for i in range(6):
         goal = Goal(i)
@@ -53,7 +53,7 @@ if __name__ == '__main__':
                 # print("Found joint position : " , joint_positions)
                 # move_to_joint_pos(robot_for_visualization.robot_id, joint_positions)
                 robot_for_visualization.reset_joint_pos(joint_positions)  # Move the robot to each position in the path
-                time.sleep(.01)  # Wait a bit to see the movement
+                time.sleep(1)  # Wait a bit to see the movement
         print("Path execution completed. Press Enter to finish.")
         input() 
         

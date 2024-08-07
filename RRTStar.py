@@ -7,11 +7,11 @@ import matplotlib.pyplot as plt
 import heapq
 
 class RRTStar:
-    def __init__(self, robot, gamma_rrt_star=1.0, eta=0.3, max_iterations=10000, goal_threshold=0.08, goal_bias=0.5, with_visualization=False):
+    def __init__(self, robot, gamma_rrt_star=1.0, eta=0.03, max_iterations=10000, goal_threshold=0.08, goal_bias=0.5, with_visualization=False):
         self.robot = robot
         self.tree = []
-        self.gamma_rrt_star = gamma_rrt_star
-        self.eta = eta
+        self.gamma_rrt_star = gamma_rrt_star # radius
+        self.eta = eta # step size
         self.max_iterations = max_iterations
         self.goal = None
         self.node_index = 0 
@@ -114,6 +114,9 @@ class RRTStar:
     def steer(self, start_config, target_config):
         # print("Steering : %s" % start_config , " to %s" % target_config)
         direction = target_config - start_config
+
+        # check the direction and compare with eta, 
+
         distance = np.linalg.norm(direction)
         if distance <= self.eta:
             return target_config
@@ -130,7 +133,10 @@ class RRTStar:
 
     def near_neighbors(self, V, target_config):
         tree_configs = [node['config'] for node in V]
+        
+        # Tip: check the time it takes to create KDTree every time, can we create it once ? 
         tree_kdtree = KDTree(tree_configs)
+        
         card_V = len(V)
         dimension = len(target_config)
         radius = min(self.gamma_rrt_star * (np.log(card_V) / card_V) ** (1 / dimension), self.eta)

@@ -482,12 +482,21 @@ class FrankaRobot(burg.robots.RobotBase):
         Returns:
             np.ndarray: The Jacobian matrix.
         """
-        num_dof = len(self.arm_joint_ids)
+        # num_dof = len(self.arm_joint_ids)
+        num_dof = len(self.joint_pos())
+
+
+        
         if num_dof <= 0:
             raise ValueError("Number of DoF should be positive")
 
         zero_vec = [0.0] * num_dof
-        joint_positions = self.arm_joints_pos().tolist()
+        # joint_positions = self.arm_joints_pos().tolist()
+
+        # maybe we can use only arm joint positions and not gripper joint positions
+        joint_positions = self.joint_pos().tolist()
+
+
         joint_velocities = zero_vec  # Assuming zero velocities 
         joint_accelerations = zero_vec  # zero accelerations 
 
@@ -497,8 +506,8 @@ class FrankaRobot(burg.robots.RobotBase):
         # if len(local_position) != 3:
         #     raise ValueError("local_position needs to be of size 3")
 
-        if len(joint_positions) != num_dof:
-            raise ValueError("joint_positions array size does not match the number of DoF")
+        #if len(joint_positions) != num_dof:
+        #    raise ValueError("joint_positions array size does not match the number of DoF")
 
         if len(joint_velocities) != num_dof:
             raise ValueError("joint_velocities array size does not match the number of DoF")

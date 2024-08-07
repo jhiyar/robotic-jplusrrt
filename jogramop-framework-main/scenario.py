@@ -10,7 +10,7 @@ import util
 
 
 class Scenario:
-    def __init__(self, scenario_id, robot_pose=None, with_platform=False):
+    def __init__(self, scenario_id, robot_pose=None, with_platform=True):
         self.id = scenario_id
         self.scene_fn = os.path.join(util.SCENARIO_DIR, f'{scenario_id:03d}', 'scene.yaml')
         self.scene, lib, _ = burg.Scene.from_yaml(self.scene_fn)

@@ -4,8 +4,10 @@ from RRTStar import RRTStar
 from JPlusRRT import JPlusRRT
 
 
+# After finding a solution, consider the orientation of the grasp for grasp planning.
+
 def main():
-    scenario_id = 12
+    scenario_id = 32
     print(f'********** SCENARIO {scenario_id:03d} **********')
     s = Scenario(scenario_id)
     
@@ -16,8 +18,8 @@ def main():
     start_pos = robot.end_effector_pose()
     goal_pos = s.grasp_poses[0][:3, 3]  # use the first grasp pose
     
-    # rrt_star = RRTStar(robot, with_visualization=True)
-    rrt_star = JPlusRRT(robot, with_visualization=True)
+    rrt_star = RRTStar(robot, with_visualization=True)
+    # rrt_star = JPlusRRT(robot, with_visualization=True)
     path = rrt_star.plan(start_pos, goal_pos)
     
     if path:

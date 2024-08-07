@@ -4,8 +4,10 @@ from scipy.spatial import KDTree
 import matplotlib.pyplot as plt
 import pybullet as p
 
+# Change: check for self collision too when checking collision
+
 class RRTStar:
-    def __init__(self, robot, gamma_rrt_star=1.0, eta=0.3, max_iterations=10000, goal_threshold=0.08, goal_bias=0.5, with_visualization=False):
+    def __init__(self, robot, gamma_rrt_star=1.0, eta=0.03, max_iterations=10000, goal_threshold=0.08, goal_bias=0.5, with_visualization=False):
         self.robot = robot
         self.tree = []
         self.gamma_rrt_star = gamma_rrt_star # gamma_rrt_star is a scaling parameter that influences the radius within which the algorithm searches for nearby nodes to rewire
@@ -130,6 +132,9 @@ class RRTStar:
 
     def near_neighbors(self, V, target_config):
         tree_configs = np.array([node['config'] for node in V])
+
+        # Tip: check the time it takes to create KDTree every time, can we create it once ? 
+
         tree_kdtree = KDTree(tree_configs)
         card_V = len(V)
         dimension = len(target_config)

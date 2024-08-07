@@ -141,7 +141,11 @@ class JPlusRRT:
         desired_ee_velocity = direction_vector * step_size
 
         J = self.robot.get_jacobian()
+        J=J[:,:-2]
+
         J_pseudo_inverse = np.linalg.pinv(J)
+
+        # print(J)
 
         joint_velocities = J_pseudo_inverse.dot(desired_ee_velocity)
         current_joint_positions = self.robot.arm_joints_pos()
