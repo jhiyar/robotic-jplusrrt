@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 class JPlusRRT:
-    def __init__(self, robot, goal_direction_probability=0.5, with_visualization=False):
+    def __init__(self, robot, goal_direction_probability=1, with_visualization=False):
         self.robot = robot
         self.tree = []
         self.goal_direction_probability = goal_direction_probability
@@ -25,11 +25,13 @@ class JPlusRRT:
         self.start_pos = start_pos
 
         while not self.is_goal_reached():
-            if random.random() < self.goal_direction_probability:
+            if True: # if random.random() <= self.goal_direction_probability:
                 # Try to move towards the goal and update the robot's state
+                print("Moving towards goal")
                 success = self.move_towards_goal()
             else:
                 # Sample a new position and update the robot's state
+                print("Sample a new position")
                 success = self.random_sample() is not None
 
             # After updating the robot's state, check for collisions without passing new_pos
@@ -137,7 +139,7 @@ class JPlusRRT:
         direction_vector = goal_pos - current_ee_pos
         direction_vector /= np.linalg.norm(direction_vector)
 
-        step_size = 0.01
+        step_size = 0.05
         desired_ee_velocity = direction_vector * step_size
 
         J = self.robot.get_jacobian()
@@ -147,12 +149,12 @@ class JPlusRRT:
 
         # print(J)
 
-        joint_velocities = J_pseudo_inverse.dot(desired_ee_velocity)
+        joint_velocities = J_pseudo_inverse @ desired_ee_velocity
         current_joint_positions = self.robot.arm_joints_pos()
         new_joint_positions = current_joint_positions + joint_velocities
 
-        lower_limits, upper_limits = self.robot.arm_joint_limits().T
-        new_joint_positions = np.clip(new_joint_positions, lower_limits, upper_limits)
+        # lower_limits, upper_limits = self.robot.arm_joint_limits().T
+        # new_joint_positions = np.clip(new_joint_positions, lower_limits, upper_limits)
 
         # Temporarily set the robot to the new positions to check for collisions
         self.robot.reset_arm_joints(new_joint_positions)
@@ -176,7 +178,7 @@ class JPlusRRT:
         current_ee_pos = self.robot.end_effector_pose()
         goal_pos = self.goal
         distance_to_goal = np.linalg.norm(current_ee_pos - goal_pos)
-        threshold = 0.05  # Meters
+        threshold = 0.2  # Meters
 
         return distance_to_goal <= threshold
 

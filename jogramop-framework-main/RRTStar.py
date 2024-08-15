@@ -7,7 +7,7 @@ import pybullet as p
 # Change: check for self collision too when checking collision
 
 class RRTStar:
-    def __init__(self, robot, gamma_rrt_star=1.0, eta=0.03, max_iterations=10000, goal_threshold=0.08, goal_bias=0.5, with_visualization=False):
+    def __init__(self, robot, gamma_rrt_star=1.0, eta=0.01, max_iterations=10000, goal_threshold=0.08, goal_bias=0.5, with_visualization=False):
         self.robot = robot
         self.tree = []
         self.gamma_rrt_star = gamma_rrt_star # gamma_rrt_star is a scaling parameter that influences the radius within which the algorithm searches for nearby nodes to rewire
@@ -44,7 +44,9 @@ class RRTStar:
 
             xnearest_index = self.nearest_neighbor(V, xrand)
             xnearest = V[xnearest_index]
+            print('Nearest neighbor ', xnearest['config'] , xrand )
             xnew_config = self.steer(xnearest['config'], xrand)
+            print('Nearest neighbor ', xnearest['config'] , xrand, xnew_config )
             
             self.robot.reset_arm_joints(xnew_config)
 
@@ -117,17 +119,28 @@ class RRTStar:
     def steer(self, start_config, target_config):
         direction = target_config - start_config
         distance = np.linalg.norm(direction)
+        print("Steering distance is %f" % distance)
         if distance <= self.eta:
+            print("returning target_config")
+            print(start_config, target_config , direction , distance)
             return target_config
         else:
             direction = (direction / distance) * self.eta
             new_config = start_config + direction
             return new_config
+    
 
     def nearest_neighbor(self, V, target_config):
+        print("Finding nearest neighbor for target config:", target_config)
+        print("Current tree configurations:")
+        for node in V:
+            print(node['config'])
+
         tree_configs = np.array([node['config'] for node in V])
         tree_kdtree = KDTree(tree_configs)
         _, nearest_index = tree_kdtree.query(target_config)
+        
+        print(f"Nearest neighbor index: {nearest_index}, configuration: {V[nearest_index]['config']}")
         return nearest_index
 
     def near_neighbors(self, V, target_config):
