@@ -197,14 +197,14 @@ class FrankaRobot(burg.robots.RobotBase):
         return self.end_effector_id
 
     def end_effector_pose(self):
-        # pos, quat, *_ = self._simulator.bullet_client.getLinkState(
-        #     self.body_id,
-        #     self.end_effector_link_id
-        # )
-        # return burg.util.tf_from_pos_quat(pos, quat, convention='pybullet')
-        link_state = self._bullet_client.getLinkState(self.body_id, self.end_effector_link_id)
-        pos = link_state[4]  # link_state[4] contains the world position of the center of mass of the link
-        return np.array(pos)
+        pos, quat, *_ = self._simulator.bullet_client.getLinkState(
+            self.body_id,
+            self.end_effector_link_id
+        )
+        return burg.util.tf_from_pos_quat(pos, quat, convention='pybullet')
+        # link_state = self._bullet_client.getLinkState(self.body_id, self.end_effector_link_id)
+        # pos = link_state[4]  # link_state[4] contains the world position of the center of mass of the link
+        # return np.array(pos)
 
 
     def reset_arm_joints(self, joint_config=None):
