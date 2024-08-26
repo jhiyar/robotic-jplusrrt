@@ -1,88 +1,72 @@
-from util import SCENARIO_IDS
-from scenario import Scenario
-from visualization import show_scenario
+import numpy as np
+import time
 
-def main():
-    # Using a specific scenario ID for demonstration
+def move_to_goal(robot, start_config, goal_pos, step_size=0.1):
+    """
+    This function attempts to move the robot's end effector to the goal position using the Jacobian.
+    """
+    robot.reset_arm_joints(start_config)
+    
+    for i in range(100):  # Attempt to move for 100 iterations
+        full_pose = robot.end_effector_pose()
+        current_ee_pos = full_pose[:3, 3]
+
+        # Calculate the direction vector and normalize it
+        direction_vector = goal_pos - current_ee_pos
+        distance_to_goal = np.linalg.norm(direction_vector)
+        
+        if distance_to_goal < 0.05:  # Goal threshold
+            print("Goal reached!")
+            break
+        
+        direction_vector /= np.linalg.norm(direction_vector)  # Normalize direction vector
+
+        # Scale the desired velocity by step size
+        desired_ee_velocity = direction_vector * step_size
+        J = robot.get_jacobian()
+
+        # Check if Jacobian is well-conditioned
+        condition_number = np.linalg.cond(J)
+        if condition_number > 1e12:
+            print(f"Warning: Jacobian is poorly conditioned (condition number = {condition_number:.2e})")
+            break
+
+        J_pseudo_inverse = np.linalg.pinv(J)
+        joint_velocities = J_pseudo_inverse @ desired_ee_velocity
+
+        # Calculate new joint positions
+        new_joint_positions = robot.arm_joints_pos() + joint_velocities[1:8]
+
+        # Check joint limits before setting the new positions
+        lower_limits, upper_limits = robot.arm_joint_limits().T
+        new_joint_positions = np.clip(new_joint_positions, lower_limits, upper_limits)
+
+        robot.reset_arm_joints(new_joint_positions)
+        time.sleep(0.2)
+
+        print(f"Iteration: {i}, Distance to Goal: {distance_to_goal:.4f}, Joint Positions: {new_joint_positions}, EE Position: {current_ee_pos}")
+
+    return robot.arm_joints_pos()
+if __name__ == '__main__':
+    from scenario import Scenario
+
+    # Initialize the robot object
     scenario_id = 12
     print(f'********** SCENARIO {scenario_id:03d} **********')
     s = Scenario(scenario_id)
     
-    # Select a random subset of grasps for better visualization
-    s.select_n_grasps(30)
+    s.select_n_grasps(60)
     
-    # Visualize the scenario (optional)
-    # show_scenario(s)
-    
-    # Get the robot and simulation environment
     robot, sim = s.get_robot_and_sim(with_gui=True)
-    
-    # Retrieve IK solutions for the selected grasps
-    ik_solutions = s.get_ik_solutions()
-    
-    if len(ik_solutions) == 0:
-        print('No valid IK solutions found for the selected grasps.')
-        return
-    
-    # Execute the grasp for the first valid IK solution
-    for ik_solution in ik_solutions:
-        # Reset robot joints to the IK solution
-        robot.reset_arm_joints(ik_solution)
-        
-        # Check for collisions and execute the grasp if there are none
-        if not robot.in_collision():
-            # Perform the grasp
-            execute_grasp(robot, sim)
 
-            print("Grasp completed")
-            input("Press Enter to continue to the next grasp...")
-            continue
-    else:
-        print('No valid grasp could be executed due to collisions.')
-
-def execute_grasp(robot, sim):
-    # Move the robot to the pre-grasp position
-    pre_grasp_pos = robot.end_effector_pose()
-    pre_grasp_pos[2] += 0.1  # Move 10 cm above the object
-    pre_grasp_joint_config = robot.inverse_kinematics(pre_grasp_pos)
+    goal_pos = s.grasp_poses[0][:3, 3]
     
-    if pre_grasp_joint_config is not None and pre_grasp_joint_config.size > 0:
-        robot.move_to(pre_grasp_joint_config)
-    
-        # Lower the robot to the grasp position
-        grasp_pos = robot.end_effector_pose()
-        grasp_pos[2] -= 0.1  # Move 10 cm down to the object
-        grasp_joint_config = robot.inverse_kinematics(grasp_pos)
-        
-        if grasp_joint_config is not None and grasp_joint_config.size > 0:
-            robot.move_to(grasp_joint_config)
-            
-            # Close the gripper to grasp the object
-            robot.close()
-            
-            # Lift the object
-            lift_pos = robot.end_effector_pose()
-            lift_pos[2] += 0.1  # Move 10 cm up with the object
-            lift_joint_config = robot.inverse_kinematics(lift_pos)
-            
-            if lift_joint_config is not None and lift_joint_config.size > 0:
-                robot.move_to(lift_joint_config)
-                
-                # Optionally, move the object to a new location
-                # new_pos = robot.end_effector_pose()
-                # new_pos[0] += 0.2  # Move 20 cm to the right
-                # new_joint_config = robot.inverse_kinematics(new_pos)
-                # if new_joint_config is not None and new_joint_config.size > 0:
-                #     robot.move_to(new_joint_config)
-                
-                # Open the gripper to release the object
-                robot.open()
-            else:
-                print('Failed to find IK solution for lifting the object.')
-        else:
-            print('Failed to find IK solution for grasping the object.')
-    else:
-        print('Failed to find IK solution for pre-grasp position.')
+    start_config = robot.arm_joints_pos()  # Get the current configuration
 
-if __name__ == '__main__':
-    main()
+    # Execute the move_to_goal function
+    final_joint_positions = move_to_goal(robot, start_config, goal_pos)
+
+    # Print the final joint positions after attempting to reach the goal
+    print("Final joint positions:", final_joint_positions)
+
+    input()

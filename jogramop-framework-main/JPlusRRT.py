@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 class JPlusRRT:
-    def __init__(self, robot, goal_direction_probability=0.5,step_size=0.2, with_visualization=False):
+    def __init__(self, robot, goal_direction_probability=0.5,step_size=0.1, with_visualization=False):
         self.robot = robot
         self.tree = []
         self.goal_direction_probability = goal_direction_probability
@@ -27,6 +27,8 @@ class JPlusRRT:
         self.goal = goal_pos
 
         self.start_config = start_config
+
+        self.robot.reset_arm_joints(start_config)
 
         # Add the initial configuration as the first node in the tree
         full_pose = self.robot.end_effector_pose()
@@ -68,15 +70,42 @@ class JPlusRRT:
                 closest_index = i
         return closest_index
 
-    def step_towards(self, q_near, q_rand, step_size=0.05):
-        """Take a small step from q_near towards q_rand."""
+    # def step_towards(self, q_near, q_rand, step_size=0.05):
+    #     """Take a small step from q_near towards q_rand."""
+    #     direction = q_rand - q_near
+    #     distance = np.linalg.norm(direction)  # Euclidean distance 
+    #     if distance <= step_size:
+    #         return q_rand
+    #     else:
+    #         q_new = q_near + (direction / distance) * step_size  # a new position that is exactly one step size closer towards q_rand, without exceeding the step size limit.
+    #         return q_new
+
+    def step_towards(self, q_near, q_rand):
+        """Take a small step from q_near towards q_rand, ensuring EE does not move more than step_size."""
         direction = q_rand - q_near
-        distance = np.linalg.norm(direction)  # Euclidean distance 
-        if distance <= step_size:
-            return q_rand
-        else:
-            q_new = q_near + (direction / distance) * step_size  # a new position that is exactly one step size closer towards q_rand, without exceeding the step size limit.
-            return q_new
+        distance = np.linalg.norm(direction)
+        if distance <= self.step_size:
+            return q_rand  # If within step size, return the target position
+
+        # Take a step in joint space
+        q_new = q_near + (direction / distance) * self.step_size
+        self.robot.reset_arm_joints(q_new)
+
+        # Check the EE movement
+        full_pose_near = self.robot.end_effector_pose()
+        ee_pos_near = full_pose_near[:3, 3]
+        
+        self.robot.reset_arm_joints(q_new)
+        full_pose_new = self.robot.end_effector_pose()
+        ee_pos_new = full_pose_new[:3, 3]
+
+        ee_movement = np.linalg.norm(ee_pos_new - ee_pos_near)
+
+        if ee_movement > self.step_size:
+            # Scale down the joint movement to ensure the EE doesn't move more than the step size
+            q_new = q_near + (direction / distance) * (self.step_size / ee_movement)
+
+        return q_new
 
     def random_sample(self, attempts=100):
         lower_limits, upper_limits = self.robot.arm_joint_limits().T
@@ -113,33 +142,61 @@ class JPlusRRT:
 
         # Use the configuration from the closest node to the goal
         closest_node = self.tree[self.closest_node_index]
+        closest_node = self.tree[-1]
         self.robot.reset_arm_joints(closest_node['config'])
 
         full_pose = self.robot.end_effector_pose()
-        current_ee_pos = full_pose[:3, 3] 
+        current_ee_pos = full_pose[:3, 3]
 
         goal_pos = self.goal
-
         direction_vector = goal_pos - current_ee_pos
-        direction_vector /= np.linalg.norm(direction_vector)
+        distance_to_goal = np.linalg.norm(direction_vector)
 
-        desired_ee_velocity = direction_vector * self.step_size
+        print("Current EE Position:", current_ee_pos)
+        print("Goal Position:", goal_pos)
+        print("Direction Vector:", direction_vector)
+        print("Distance to Goal:", distance_to_goal)
+
+        if distance_to_goal < self.step_size:
+            step_distance = distance_to_goal  # Move directly to the goal if within step size
+        else:
+            step_distance = self.step_size
+
+        adjustment = np.array([4, 0, 0])  # Adjust this vector based on your robot's coordinate system
+        direction_vector = direction_vector + adjustment
+
+        # Normalize the direction vector and scale it to the desired step distance
+        unit_direction_vector = direction_vector / distance_to_goal
+        desired_ee_velocity = unit_direction_vector * step_distance
+
+        print("Desired EE Velocity:", desired_ee_velocity)
 
         J = self.robot.get_jacobian()
-        J = J[:, :-2]
+        print("Jacobian Matrix:", J)
 
-        J_pseudo_inverse = np.linalg.pinv(J)
+        # Compute the pseudo-inverse of the Jacobian
+        try:
+            J_pseudo_inverse = np.linalg.pinv(J)
+        except np.linalg.LinAlgError as e:
+            print("Jacobian pseudo-inverse computation failed:", e)
+            return False
+
+        print("Jacobian Pseudo-Inverse:", J_pseudo_inverse)
+
+        # Calculate the required joint velocities
         joint_velocities = J_pseudo_inverse @ desired_ee_velocity
+        print("Joint Velocities:", joint_velocities)
 
-        # Introduce a random perturbation to help escape local minima
-        perturbation = np.random.uniform(-0.01, 0.01, size=joint_velocities.shape)
-        joint_velocities += perturbation
+        # Limit the joint velocities to avoid instability
+        max_joint_velocity = 1  # Maximum allowable joint velocity
+        joint_velocity_norm = np.linalg.norm(joint_velocities)
+        if joint_velocity_norm > max_joint_velocity:
+            joint_velocities = joint_velocities / joint_velocity_norm * max_joint_velocity
+            print("Scaled Joint Velocities:", joint_velocities)
 
-        current_joint_positions = self.robot.arm_joints_pos()
+        current_joint_positions = closest_node['config']
         new_joint_positions = current_joint_positions + joint_velocities
 
-        print("Current Joint Positions:", current_joint_positions)
-        print("Joint Velocities:", joint_velocities)
         print("New Joint Positions:", new_joint_positions)
 
         # Temporarily set the robot to the new positions to check for collisions
@@ -159,13 +216,79 @@ class JPlusRRT:
 
             self.tree.append(node)
 
-            # print(new_ee_pos , self.goal , self.tree[self.closest_node_index]['ee_pos'])
-
             # Update the closest node to the goal if this one is closer
             if np.linalg.norm(new_ee_pos - self.goal) < np.linalg.norm(self.tree[self.closest_node_index]['ee_pos'] - self.goal):
                 self.closest_node_index = len(self.tree) - 1
 
             return True
+
+    # using inverse_kinematics to move towards the goal
+    # def move_towards_goal(self):
+    #     if self.closest_node_index is None:
+    #         print("No valid starting node")
+    #         return False  # No valid node to start from
+
+    #     # Use the configuration from the closest node to the goal
+    #     closest_node = self.tree[self.closest_node_index]
+    #     closest_node = self.tree[-1]
+    #     self.robot.reset_arm_joints(closest_node['config'])
+
+    #     full_pose = self.robot.end_effector_pose()
+    #     current_ee_pos = full_pose[:3, 3]
+
+    #     goal_pos = self.goal
+    #     direction_vector = goal_pos - current_ee_pos
+    #     distance_to_goal = np.linalg.norm(direction_vector)
+
+    #     print("Current EE Position:", current_ee_pos)
+    #     print("Goal Position:", goal_pos)
+    #     print("Direction Vector:", direction_vector)
+    #     print("Distance to Goal:", distance_to_goal)
+
+    #     if distance_to_goal < self.step_size:
+    #         step_distance = distance_to_goal  # Move directly to the goal if within step size
+    #     else:
+    #         step_distance = self.step_size
+
+    #     # Normalize the direction vector and scale it to the desired step distance
+    #     unit_direction_vector = direction_vector / distance_to_goal
+    #     desired_ee_pos = current_ee_pos + unit_direction_vector * step_distance
+
+    #     print("Desired EE Position:", desired_ee_pos)
+
+    #     # Calculate the inverse kinematics to find the joint positions for the desired EE position
+    #     desired_ee_orientation = None  # we don't have a specific orientation goal yet
+    #     new_joint_positions = self.robot.inverse_kinematics(desired_ee_pos, desired_ee_orientation)
+
+    #     if new_joint_positions is None:
+    #         print("Inverse Kinematics failed to find a solution")
+    #         return False
+
+    #     print("New Joint Positions:", new_joint_positions)
+
+    #     # Temporarily set the robot to the new positions to check for collisions
+    #     self.robot.reset_arm_joints(new_joint_positions)
+    #     if self.robot.in_collision():
+    #         print("Collision detected, skipping this node.")
+    #         return False  # Move results in a collision, revert changes
+    #     else:
+    #         # Successful move towards goal without collision, update the tree
+    #         parent_index = self.closest_node_index
+    #         full_pose = self.robot.end_effector_pose()
+    #         new_ee_pos = full_pose[:3, 3]
+    #         node = {'config': new_joint_positions, 'ee_pos': new_ee_pos, 'parent_index': parent_index}
+
+    #         print("New EE Position:", new_ee_pos)
+    #         print("New node found, adding to the tree", node)
+
+    #         self.tree.append(node)
+
+    #         # Update the closest node to the goal if this one is closer
+    #         if np.linalg.norm(new_ee_pos - self.goal) < np.linalg.norm(self.tree[self.closest_node_index]['ee_pos'] - self.goal):
+    #             self.closest_node_index = len(self.tree) - 1
+
+    #         return True
+
 
 
     def is_goal_reached(self):
@@ -179,7 +302,7 @@ class JPlusRRT:
         current_ee_pos = full_pose[:3, 3] 
         goal_pos = self.goal
         distance_to_goal = np.linalg.norm(current_ee_pos - goal_pos)
-        threshold = 0.05  # Meters
+        threshold = 0.1  # Meters
 
         return distance_to_goal <= threshold
 

@@ -483,9 +483,11 @@ class FrankaRobot(burg.robots.RobotBase):
             np.ndarray: The Jacobian matrix.
         """
         # num_dof = len(self.arm_joint_ids)
+        # num_dof = len(self.arm_joints_pos())
         num_dof = len(self.joint_pos())
 
 
+        print("Calculating Jacobian matrix " + str(num_dof))
         
         if num_dof <= 0:
             raise ValueError("Number of DoF should be positive")
@@ -493,21 +495,21 @@ class FrankaRobot(burg.robots.RobotBase):
         zero_vec = [0.0] * num_dof
         # joint_positions = self.arm_joints_pos().tolist()
 
-        # maybe we can use only arm joint positions and not gripper joint positions
+        # we use only arm joint positions and not gripper joint positions
         joint_positions = self.joint_pos().tolist()
+        # joint_positions = self.arm_joints_pos().tolist()
+
+        print("Joint Positions:", joint_positions)
 
 
         joint_velocities = zero_vec  # Assuming zero velocities 
         joint_accelerations = zero_vec  # zero accelerations 
 
+        print("Joint Velocities:", joint_velocities)
+        print("Joint Accelerations:", joint_accelerations)
+
         # Ensure local_position is a 3-element array
         local_position = [0.0, 0.0, 0.0]
-
-        # if len(local_position) != 3:
-        #     raise ValueError("local_position needs to be of size 3")
-
-        #if len(joint_positions) != num_dof:
-        #    raise ValueError("joint_positions array size does not match the number of DoF")
 
         if len(joint_velocities) != num_dof:
             raise ValueError("joint_velocities array size does not match the number of DoF")
@@ -525,11 +527,10 @@ class FrankaRobot(burg.robots.RobotBase):
         )
 
         # We are only interested in the translational part of the Jacobian for this task
-        jacobian = np.array(jac_t)
-        return jacobian
+        jac_t = np.asarray(jac_t)
+        return jac_t[:, :7]
 
-
-
+    
 class TrajectoryPlanner:
     def lin(self):
         pass
@@ -540,6 +541,7 @@ class TrajectoryPlanner:
         # synchronised ptp: joint that needs to do the largest distance will determine the trajectory length
         # for all other joints we will reduce v and a accordingly
         # see TrajectoryPlanner in BURG Toolkit (for LIN motion)
+
         assert len(target_q) == len(start_q)
         if np.allclose(start_q, target_q):  # already at target
             time_steps = np.asarray([0, dt])

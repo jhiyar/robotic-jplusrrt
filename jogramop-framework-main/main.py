@@ -3,6 +3,7 @@ from scenario import Scenario
 from RRTStar import RRTStar  
 from JPlusRRT import JPlusRRT
 import numpy as np
+import time
 
 # After finding a solution, consider the orientation of the grasp for grasp planning.
 def main():
@@ -18,7 +19,7 @@ def main():
     
     goal_pos = s.grasp_poses[0][:3, 3]  # use the first grasp pose
     
-    planner = JPlusRRT(robot, goal_direction_probability=1, with_visualization=True)
+    planner = JPlusRRT(robot, goal_direction_probability=0.9, with_visualization=False)
     path = planner.plan(start_config, goal_pos)
     
     if path:
@@ -29,6 +30,9 @@ def main():
             if np.isnan(node['config']).any() or np.isinf(node['config']).any():
                 raise ValueError(f"Invalid configuration found in path: {node['config']}")
             robot.move_to(node['config'])
+            time.sleep(0.2)
+
+            input()
     else:
         print("No path found.")
     
