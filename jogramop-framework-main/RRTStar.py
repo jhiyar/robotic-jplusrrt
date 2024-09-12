@@ -114,7 +114,8 @@ class RRTStar:
     def is_goal_reached(self, config):
         self.robot.reset_arm_joints(config)
         ee_pos = self.robot.end_effector_pose()
-        return np.linalg.norm(ee_pos - self.goal) < self.goal_threshold
+        ee_pos_3d = ee_pos[:3, 3]  # Extract the 3D position part (x, y, z)
+        return np.linalg.norm(ee_pos_3d - self.goal) < self.goal_threshold
 
     def steer(self, start_config, target_config):
         direction = target_config - start_config

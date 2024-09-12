@@ -7,7 +7,7 @@ import time
 
 # After finding a solution, consider the orientation of the grasp for grasp planning.
 def main():
-    scenario_id = 12
+    scenario_id = 11
     print(f'********** SCENARIO {scenario_id:03d} **********')
     s = Scenario(scenario_id)
     
@@ -19,7 +19,8 @@ def main():
     
     goal_pos = s.grasp_poses[0][:3, 3]  # use the first grasp pose
     
-    planner = JPlusRRT(robot, goal_direction_probability=0.9, with_visualization=False)
+    planner = RRTStar(robot, goal_bias=0.5, with_visualization=False)
+    # planner = JPlusRRT(robot, goal_direction_probability=0.9, with_visualization=False)
     path = planner.plan(start_config, goal_pos)
     
     if path:
