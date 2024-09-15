@@ -7,7 +7,7 @@ from goal import Goal
 from JPlusRRT import JPlusRRT
 from IKRRT import IKRRT
 from BIKRRT import BIKRRT
-from RRTStar import RRTStar
+from RRTStar1 import RRTStar
 
 # change: add all goals for all three algorithms
 
@@ -86,8 +86,8 @@ if __name__ == '__main__':
     algorithms = {
         'JPlusRRT': JPlusRRT(robot, goal_direction_probability=0.9),
         'RRTStar': RRTStar(robot, goal_bias=0.9),
-        # 'IKRRT': IKRRT(robot),
-        # 'BIKRRT': BIKRRT(robot)
+        'IKRRT': IKRRT(robot),
+        'BIKRRT': BIKRRT(robot)
     }
 
     results = compare_algorithms(algorithms, start_position, goal_position)
