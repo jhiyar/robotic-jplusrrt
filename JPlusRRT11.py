@@ -192,7 +192,7 @@ class JPlusRRT:
         direction_vector = goal_pos - current_ee_pos
         direction_vector /= np.linalg.norm(direction_vector)
 
-        step_size = 0.01
+        step_size = 0.05
         desired_ee_velocity = direction_vector * step_size
 
         J = self.robot.get_jacobian()

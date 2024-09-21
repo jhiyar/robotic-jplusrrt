@@ -2,7 +2,7 @@ from robot import Robot
 from JPlusRRT11 import JPlusRRT
 from IKRRT import IKRRT
 # from BIKRRT import BIKRRT
-from RRTStar import RRTStar
+from RRTStar2 import RRTStar
 from BIKRRTOptimized import BIKRRTOptimized
 
 import numpy as np
@@ -25,8 +25,8 @@ if __name__ == '__main__':
     # move_to_ee_pose(robot.robot_id, goal_position)
 
 
-    # planner = JPlusRRT(robot, goal_direction_probability=1,with_visualization=True)
-    planner = RRTStar(robot, goal_bias=0.9,with_visualization=True)
+    planner = JPlusRRT(robot, goal_direction_probability=0.9,with_visualization=True)
+    # planner = RRTStar(robot, goal_direction_probability=0.9,with_visualization=True)
     # planner = BIKRRT(robot, goal_direction_probability=0.1,with_visualization=True)
     # planner = BIKRRTOptimized(robot, goal_direction_probability=0.5,with_visualization=True)
     # start_position = robot.get_joint_pos()

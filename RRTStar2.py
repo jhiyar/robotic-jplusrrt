@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import heapq
 
 class RRTStar:
-    def __init__(self, robot, gamma_rrt_star=1.0, eta=0.03, max_iterations=10000, goal_threshold=0.08, goal_bias=0.5, with_visualization=False):
+    def __init__(self, robot, gamma_rrt_star=1.0, eta=0.03, max_iterations=10000, goal_threshold=0.08, goal_direction_probability=0.5, with_visualization=False):
         self.robot = robot
         self.tree = []
         self.gamma_rrt_star = gamma_rrt_star # radius
@@ -16,7 +16,7 @@ class RRTStar:
         self.goal = None
         self.node_index = 0 
         self.goal_threshold = goal_threshold
-        self.goal_bias = goal_bias
+        self.goal_direction_probability = goal_direction_probability
         self.with_visualization = with_visualization
 
         if with_visualization:
@@ -37,7 +37,7 @@ class RRTStar:
         for i in range(self.max_iterations):
             print('Iteration %d' % i)
 
-            if random.random() < self.goal_bias:
+            if random.random() < self.goal_direction_probability:
                 xrand = goal_config
             else:
                 xrand = self.random_sample()
