@@ -32,6 +32,8 @@ class RRTStar:
     def plan(self, start_pos, goal_pos):
         self.goal = goal_pos
         goal_config = self.get_goal_config(goal_pos)
+        if(goal_config is None):
+            return None
         start_node = {'id': self.node_index, 'config': self.robot.arm_joints_pos(), 'ee_pos': start_pos, 'cost': 0, 'parent_index': None}
         self.node_index += 1
         V = [start_node]
@@ -107,7 +109,7 @@ class RRTStar:
                 self.robot.reset_arm_joints(goal_config)
                 if not self.robot.in_collision():
                     return goal_config
-        raise RuntimeError("Failed to find a collision-free initial configuration for the goal.")
+        return None
 
     def is_goal_reached(self, config):
         self.robot.reset_arm_joints(config)

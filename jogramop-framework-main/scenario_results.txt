@@ -1,0 +1,120 @@
+
+Scenario 011 results after 1 runs:
+Average Time: 0.0000 seconds
+Average Path Length: 2.00
+Success Rate: 100.00%
+
+
+Scenario 012 results after 1 runs:
+Average Time: 4.0307 seconds
+Average Path Length: 0.00
+Success Rate: 0.00%
+
+
+Scenario 013 results after 1 runs:
+Average Time: 5.9990 seconds
+Average Path Length: 0.00
+Success Rate: 0.00%
+
+
+Scenario 014 results after 1 runs:
+Average Time: 5.7576 seconds
+Average Path Length: 0.00
+Success Rate: 0.00%
+
+
+Scenario 015 results after 1 runs:
+Average Time: 6.5087 seconds
+Average Path Length: 0.00
+Success Rate: 0.00%
+
+
+Scenario 021 results after 1 runs:
+Average Time: 3.7835 seconds
+Average Path Length: 0.00
+Success Rate: 0.00%
+
+
+Scenario 022 results after 1 runs:
+Average Time: 8.5034 seconds
+Average Path Length: 0.00
+Success Rate: 0.00%
+
+
+Scenario 023 results after 1 runs:
+Average Time: 5.7465 seconds
+Average Path Length: 0.00
+Success Rate: 0.00%
+
+
+Scenario 024 results after 1 runs:
+Average Time: 5.7452 seconds
+Average Path Length: 0.00
+Success Rate: 0.00%
+
+
+Scenario 025 results after 1 runs:
+Average Time: 6.5710 seconds
+Average Path Length: 0.00
+Success Rate: 0.00%
+
+
+Scenario 031 results after 1 runs:
+Average Time: 8.8999 seconds
+Average Path Length: 0.00
+Success Rate: 0.00%
+
+
+Scenario 032 results after 1 runs:
+Average Time: 10.8933 seconds
+Average Path Length: 0.00
+Success Rate: 0.00%
+
+
+Scenario 033 results after 1 runs:
+Average Time: 10.9124 seconds
+Average Path Length: 0.00
+Success Rate: 0.00%
+
+
+Scenario 034 results after 1 runs:
+Average Time: 9.2396 seconds
+Average Path Length: 0.00
+Success Rate: 0.00%
+
+
+Scenario 035 results after 1 runs:
+Average Time: 9.6125 seconds
+Average Path Length: 0.00
+Success Rate: 0.00%
+
+
+Scenario 041 results after 1 runs:
+Average Time: 8.7933 seconds
+Average Path Length: 0.00
+Success Rate: 0.00%
+
+
+Scenario 042 results after 1 runs:
+Average Time: 9.9593 seconds
+Average Path Length: 0.00
+Success Rate: 0.00%
+
+
+Scenario 043 results after 1 runs:
+Average Time: 5.6752 seconds
+Average Path Length: 0.00
+Success Rate: 0.00%
+
+
+Scenario 044 results after 1 runs:
+Average Time: 5.8026 seconds
+Average Path Length: 0.00
+Success Rate: 0.00%
+
+
+Scenario 045 results after 1 runs:
+Average Time: 5.5408 seconds
+Average Path Length: 0.00
+Success Rate: 0.00%
+
