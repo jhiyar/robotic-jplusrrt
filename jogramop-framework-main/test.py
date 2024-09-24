@@ -1,72 +1,77 @@
+from util import SCENARIO_IDS
+from scenario import Scenario
+from RRTStar import RRTStar  
 import numpy as np
 import time
+import random
 
-def move_to_goal(robot, start_config, goal_pos, step_size=0.1):
-    """
-    This function attempts to move the robot's end effector to the goal position using the Jacobian.
-    """
-    robot.reset_arm_joints(start_config)
+def interpolate_path(path, step_size=0.05):
+    """Interpolate between path nodes to generate finer steps."""
+    interpolated_path = []
+    for i in range(len(path) - 1):
+        start = path[i]['config']
+        end = path[i + 1]['config']
+        distance = np.linalg.norm(end - start)
+        num_steps = int(np.ceil(distance / step_size))
+        
+        for j in range(num_steps):
+            interp_config = start + (end - start) * (j / num_steps)
+            interpolated_path.append(interp_config)
     
-    for i in range(100):  # Attempt to move for 100 iterations
-        full_pose = robot.end_effector_pose()
-        current_ee_pos = full_pose[:3, 3]
+    interpolated_path.append(path[-1]['config'])  # Ensure the last point is added
+    return interpolated_path
 
-        # Calculate the direction vector and normalize it
-        direction_vector = goal_pos - current_ee_pos
-        distance_to_goal = np.linalg.norm(direction_vector)
-        
-        if distance_to_goal < 0.05:  # Goal threshold
-            print("Goal reached!")
-            break
-        
-        direction_vector /= np.linalg.norm(direction_vector)  # Normalize direction vector
-
-        # Scale the desired velocity by step size
-        desired_ee_velocity = direction_vector * step_size
-        J = robot.get_jacobian()
-
-        # Check if Jacobian is well-conditioned
-        condition_number = np.linalg.cond(J)
-        if condition_number > 1e12:
-            print(f"Warning: Jacobian is poorly conditioned (condition number = {condition_number:.2e})")
-            break
-
-        J_pseudo_inverse = np.linalg.pinv(J)
-        joint_velocities = J_pseudo_inverse @ desired_ee_velocity
-
-        # Calculate new joint positions
-        new_joint_positions = robot.arm_joints_pos() + joint_velocities[1:8]
-
-        # Check joint limits before setting the new positions
-        lower_limits, upper_limits = robot.arm_joint_limits().T
-        new_joint_positions = np.clip(new_joint_positions, lower_limits, upper_limits)
-
-        robot.reset_arm_joints(new_joint_positions)
-        time.sleep(0.2)
-
-        print(f"Iteration: {i}, Distance to Goal: {distance_to_goal:.4f}, Joint Positions: {new_joint_positions}, EE Position: {current_ee_pos}")
-
-    return robot.arm_joints_pos()
-if __name__ == '__main__':
-    from scenario import Scenario
-
-    # Initialize the robot object
-    scenario_id = 12
+def main():
+    scenario_id = 21
     print(f'********** SCENARIO {scenario_id:03d} **********')
+
+    print(random.random())
+    print(random.random())
+    print(random.random())
+    print(random.random())
+    
+    # Load the scenario
     s = Scenario(scenario_id)
     
+    # Select the grasp poses
     s.select_n_grasps(60)
     
-    robot, sim = s.get_robot_and_sim(with_gui=True)
-
+    # Get the robot and simulation environment
+    robot, sim = s.get_robot_and_sim(with_gui=False)
+    
+    # Get the initial configuration of the robot's joints
+    start_config = robot.arm_joints_pos()
+    
+    # Define the goal position (using the first grasp pose)
     goal_pos = s.grasp_poses[0][:3, 3]
     
-    start_config = robot.arm_joints_pos()  # Get the current configuration
+    # Create the RRTStar planner
+    planner = RRTStar(robot, goal_bias=0.1, with_visualization=True)
+    
+    # Run the planner to find a path
+    print("Running RRT* planner...")
+    path = planner.plan(start_config, goal_pos)
 
-    # Execute the move_to_goal function
-    final_joint_positions = move_to_goal(robot, start_config, goal_pos)
+    robot, sim = s.get_robot_and_sim(with_gui=True)
+    
+    # If a path is found, execute it
+    if path:
+        print("Path found! Executing path ... path length:", len(path))
+        
+        # Interpolate the path to get smaller steps
+        interpolated_path = interpolate_path(path, step_size=0.5)
+        
+        for node in path:
+            # Move the robot to each configuration along the path
+            robot.move_to(node['config'])
+            time.sleep(0.2) # Delay to simulate the robot's motion
+        
+        print("Path execution complete.")
+    else:
+        print("No path found.")
+    
+    # Wait for the user to continue/exit
+    input('Press Enter to exit')
 
-    # Print the final joint positions after attempting to reach the goal
-    print("Final joint positions:", final_joint_positions)
-
-    input()
+if __name__ == '__main__':
+    main()

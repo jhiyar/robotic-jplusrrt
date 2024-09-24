@@ -70,7 +70,7 @@ def log_results_to_file(scenario_id, n_runs, avg_time, avg_path_length, success_
         f.write(f"Average Path Length: {avg_path_length:.2f}\n")
         f.write(f"Success Rate: {success_rate:.2f}%\n\n")
 
-def run_all_scenarios(n_runs=1):
+def run_all_scenarios(n_runs=10):
     for scenario_id in SCENARIO_IDS:
         run_scenario(scenario_id, n_runs)
 

@@ -5,7 +5,7 @@ import numpy as np
 import time
 
 def main():
-    scenario_id = 41
+    scenario_id = 21
     print(f'********** SCENARIO {scenario_id:03d} **********')
     
     # Load the scenario
@@ -24,7 +24,7 @@ def main():
     goal_pos = s.grasp_poses[0][:3, 3]
     
     # Create the RRTStar planner
-    planner = RRTStar(robot, goal_bias=0.1, with_visualization=False)
+    planner = RRTStar(robot)
     
     # Run the planner to find a path
     print("Running RRT* planner...")
