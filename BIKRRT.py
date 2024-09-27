@@ -83,7 +83,7 @@ class BIKRRT:
 
         return self.reconstruct_path()
 
-    def extend_tree(self, tree, target_pos, step_size=0.05):
+    def extend_tree(self, tree, target_pos, step_size=0.1):
         nearest_index = self.nearest_neighbor(tree, target_pos)
         nearest_node = tree[nearest_index]
 

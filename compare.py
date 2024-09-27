@@ -4,14 +4,14 @@ import matplotlib.pyplot as plt
 from robot import Robot
 from goal import Goal
 
-from JPlusRRT import JPlusRRT
+from JPlusRRT11 import JPlusRRT
 from IKRRT import IKRRT
 from BIKRRT import BIKRRT
-from RRTStar1 import RRTStar
+from RRTStar2 import RRTStar
 
 # change: add all goals for all three algorithms
 
-def compare_algorithms(algorithms, start_pos, goal_pos, num_runs=100):
+def compare_algorithms(algorithms, start_pos, goal_pos, num_runs=10):
     results = {name: {'path_length': [], 'planning_time': [], 'success': []} for name in algorithms.keys()}
     
     for name, algorithm in algorithms.items():
@@ -85,10 +85,12 @@ if __name__ == '__main__':
 
     algorithms = {
         'JPlusRRT': JPlusRRT(robot, goal_direction_probability=0.9),
-        'RRTStar': RRTStar(robot, goal_bias=0.9),
-        'IKRRT': IKRRT(robot),
-        'BIKRRT': BIKRRT(robot)
+        'RRTStar': RRTStar(robot, goal_direction_probability=0.9),
+        'IKRRT': IKRRT(robot,goal_direction_probability=0.9),
+        'BIKRRT': BIKRRT(robot,goal_direction_probability=0.9)
     }
 
     results = compare_algorithms(algorithms, start_position, goal_position)
+
+    print(results)
     plot_results(results)

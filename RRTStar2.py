@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import heapq
 
 class RRTStar:
-    def __init__(self, robot, gamma_rrt_star=1.0, eta=0.03, max_iterations=10000, goal_threshold=0.08, goal_direction_probability=0.5, with_visualization=False):
+    def __init__(self, robot, gamma_rrt_star=1.0, eta=0.03, max_iterations=10000, goal_threshold=0.1, goal_direction_probability=0.5, with_visualization=False):
         self.robot = robot
         self.tree = []
         self.gamma_rrt_star = gamma_rrt_star # radius
@@ -118,10 +118,14 @@ class RRTStar:
         # check the direction and compare with eta, 
 
         distance = np.linalg.norm(direction)
-        if distance <= self.eta:
+        
+        step_size =0.5
+
+
+        if distance <= step_size:
             return target_config
         else:
-            direction = (direction / distance) * self.eta
+            direction = (direction / distance) * step_size
             new_config = start_config + direction
             return new_config
 

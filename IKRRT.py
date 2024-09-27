@@ -42,7 +42,7 @@ class IKRRT:
                 closest_index = i
         return closest_index
 
-    def step_towards(self, q_near, q_rand, step_size=0.05):
+    def step_towards(self, q_near, q_rand, step_size=0.1):
         """Take a small step from q_near towards q_rand."""
         direction = q_rand - q_near
         distance = np.linalg.norm(direction)  # Euclidean distance
