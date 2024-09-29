@@ -22,28 +22,30 @@ def main():
     
     # Define the goal position (using the first grasp pose)
     goal_pos = s.grasp_poses[0][:3, 3]
+
+    print(s.grasp_poses[0])
     
-    # Create the RRTStar planner
-    planner = RRTStar(robot)
+    # # Create the RRTStar planner
+    # planner = RRTStar(robot)
     
-    # Run the planner to find a path
-    print("Running RRT* planner...")
-    path = planner.plan(start_config, goal_pos)
+    # # Run the planner to find a path
+    # print("Running RRT* planner...")
+    # path = planner.plan(start_config, goal_pos)
     
-    # If a path is found, execute it
-    if path:
-        print("Path found! Executing path ... path length:" , len(path))
-        for node in path:
-            # Move the robot to each configuration along the path
-            robot.move_to(node['config'])
-            time.sleep(0.2)  # Delay to simulate the robot's motion
+    # # If a path is found, execute it
+    # if path:
+    #     print("Path found! Executing path ... path length:" , len(path))
+    #     for node in path:
+    #         # Move the robot to each configuration along the path
+    #         robot.move_to(node['config'])
+    #         time.sleep(0.2)  # Delay to simulate the robot's motion
         
-        print("Path execution complete.")
-    else:
-        print("No path found.")
+    #     print("Path execution complete.")
+    # else:
+    #     print("No path found.")
     
-    # Wait for the user to continue/exit
-    input('Press Enter to exit')
+    # # Wait for the user to continue/exit
+    # input('Press Enter to exit')
 
 if __name__ == '__main__':
     main()

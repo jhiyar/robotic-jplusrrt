@@ -3,7 +3,7 @@ import random
 from scipy.spatial import KDTree
 
 class RRTStar:
-    def __init__(self, robot, gamma_rrt_star=1.0, eta=0.05, max_iterations=10000, goal_threshold=0.1, goal_bias=0.5):
+    def __init__(self, robot, gamma_rrt_star=1.0, eta=0.05, max_iterations=10000, goal_threshold=0.1, goal_bias=0.9):
         self.robot = robot
         self.gamma_rrt_star = gamma_rrt_star
         self.eta = eta
