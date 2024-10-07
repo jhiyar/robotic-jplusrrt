@@ -1,4 +1,0 @@
-1. LaValle, S. M., & Kuffner, J. J. (1998). Rapidly-Exploring Random Trees: Progress and Prospects. *In Proceedings of the Workshop on the Algorithmic Foundations of Robotics*.
-2. Karaman, S., & Frazzoli, E. (2011). Sampling-based algorithms for optimal motion planning. *The International Journal of Robotics Research*, 30(7), 846-894.
-3. Gammell, J. D., et al. (2014). Informed RRT*: Optimal sampling-based path planning focused via heuristics. *In Proceedings of Robotics: Science and Systems*.
-4. Cheng, Y., & How, J. P. (2009). A new approach to dynamic RRT. *In Proceedings of the IEEE International Conference on Robotics and Automation*.

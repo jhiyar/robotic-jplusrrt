@@ -25,10 +25,7 @@ def main():
     scenario_id = 21
     print(f'********** SCENARIO {scenario_id:03d} **********')
 
-    print(random.random())
-    print(random.random())
-    print(random.random())
-    print(random.random())
+  
     
     # Load the scenario
     s = Scenario(scenario_id)
